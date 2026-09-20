@@ -1,5 +1,6 @@
 name: MapGrapherIOS
 options:
+  developmentLanguage: ja
   minimumXcodeGenVersion: 2.44.1
   deploymentTarget:
     iOS: '17.0'

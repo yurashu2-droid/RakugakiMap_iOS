@@ -130,6 +130,7 @@ public struct PendingSubmission: Equatable, Sendable {
     ) -> PendingSubmission? {
         guard attemptCount >= self.attemptCount,
               updatedAt >= self.updatedAt,
+              !(self.resumeStage == .register && resumeStage == .upload),
               self.remoteID == nil || self.remoteID == remoteID else {
             return nil
         }

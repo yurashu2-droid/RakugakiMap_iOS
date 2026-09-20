@@ -1,10 +1,10 @@
 # T02 ARローカル試作・G1実機検証
 
-状態: 手順のみ準備済み。AR実装、Simulatorテスト、実機操作は未実施。G1は未判定。
+状態: ローカルAR試作を実装済み。Simulatorテストと実機操作は未実施。G1は未判定。
 
 ## テスト用の公開境界
 
-`MapGrapherIOSTests/ARPlaneGeometryTests.swift` はアプリモジュールの次の純粋計算を先行指定する。`ARPlaneGeometry` の実装前にREDを確認し、実装後にC1でGREENを確認する。
+`MapGrapherIOSTests/ARPlaneGeometryTests.swift` はアプリモジュールの次の純粋計算を指定する。実装前のREDはGitHub Actionsで確認済み。実装後のGREENは未確認。
 
 ```swift
 struct ARPlaneGeometry {
@@ -14,7 +14,9 @@ struct ARPlaneGeometry {
 }
 ```
 
-ピクセル幅・高さは正のfinite値、表示幅は0.1〜10m。高さは画像の縦横比から求める。計算結果が0または非finiteになる入力を拒否する。fixtureは1000×500px、表示幅1mで高さ0.5m。ARKit/RealityKitと画像デコードの成否はこの単体テストでは判定しない。
+ピクセル幅・高さは正のfinite値、表示幅は0.1〜10m。高さは画像の縦横比から求める。計算結果が0または非finiteになる入力を拒否する。fixtureは実行時にCoreGraphicsで生成する透明な1000×500px画像で、上向き矢印と左上の丸を持つ。表示幅1mなら高さ0.5m。ARKit/RealityKitと画像デコードの成否はこの単体テストでは判定しない。
+
+配置は検出済み平面へのraycast結果から`ARPlaneAnchor`を要求する。Appleの[ARPlaneAnchor座標系](https://developer.apple.com/documentation/arkit/arplaneanchor)に合わせ、平面の回転とXZ面・Y法線を使い、位置だけraycast交点へ置き換える。透過板は同じXZ面に生成する。水平・垂直とも独自の90度回転は加えない。見た目と追跡の成否はA04/A05で実機確認する。
 
 ## 実行前に記録する項目
 
@@ -24,7 +26,7 @@ struct ARPlaneGeometry {
 | 非LiDARでARKit対応のiPhone機種 | 未確認 |
 | iOS・Xcode版 | 未確認 |
 | 対象commit・build構成 | 未確認 |
-| 試験素材 | 位置・顔・個人情報を含まない透過PNGを用意。ファイル名とピクセル寸法は未確認 |
+| 試験素材 | 個人情報を含まない1000×500pxの透過画像を実行時生成。実機での透過表示は未確認 |
 | 検証場所 | 平らな床と壁がある安全な場所。正確な座標は記録しない |
 | 証拠 | 個人情報の映らないスクリーンショット/動画と結果ログの保存先を後で記入 |
 

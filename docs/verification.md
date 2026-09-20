@@ -16,3 +16,7 @@
 - T01は現在、座標・enum・セッション値・位置ゲート・遷移表まで。Photo、ArExperience、PendingSubmissionとPortsの残りを完了したとは扱わない。
 - run 35513661831: XcodeGen生成・署名なしdevice build成功。unit段階でUI test targetのSwift 6隔離違反（同期setUpWithErrorからMainActor操作）を検出。UIテスト実行前の失敗でありUIのRED確認には数えない。起動helperの隔離を修正して再実行する。
 - CI設定は別担当の静的レビュー承認済み。Simulator runtimeはXcode 16.4に合わせ18.5へ固定。既知の秘密値・精密座標パターン検査は該当なし。
+- run 35514124788: Core 20件のうち位置ゲートの追加回帰2件で計3assert失敗、他は成功。UIはsuper.setUpのSwift 6非Sendableエラーで未実行。起動処理を各MainActorテストから呼ぶ同期helperへ移動した。
+- [run 35514451027](https://github.com/yurashu2-droid/RakugakiMap_iOS/actions/runs/35514451027): ARPlaneGeometry未実装のRED確認。UIは3件を実行し、空画面のscreen.map/tab.groups不足で期待通り3件失敗。T01残りのドメイン型も未定義のRED確認済み。
+- T01実装の静的レビューで登録工程からuploadへ戻れる進行コピーを検出し、回帰テストを追加してCIのRED確認へ送付した。
+- ユーザー回答: iPhoneあり、Macなし、Apple Developer Program未加入、iLoaderで導入する。Ruling: 現段階の実機導入はTestFlightではなく、検証成功後の署名前IPAをArtifactsへ出し、本人のiLoaderで署名する。Appleへのuploadはしない。

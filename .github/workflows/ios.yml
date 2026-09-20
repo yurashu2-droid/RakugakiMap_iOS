@@ -69,6 +69,14 @@ jobs:
       - name: UI tests
         if: ${{ !cancelled() && steps.simulator.outcome == 'success' }}
         run: bash scripts/verify-ios.sh ui
+      - name: Export UI screenshots
+        if: ${{ !cancelled() && steps.simulator.outcome == 'success' }}
+        run: |
+          for result in .build/verification/*/ui.xcresult; do
+            if [[ -d "$result" ]]; then
+              xcrun xcresulttool export attachments --path "$result" --output-path .build/verification/ui-attachments
+            fi
+          done
       - name: Test results
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6

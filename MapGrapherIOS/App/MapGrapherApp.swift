@@ -2,10 +2,13 @@ import SwiftUI
 
 @main
 struct MapGrapherApp: App {
+    private var isUITesting: Bool {
+        ProcessInfo.processInfo.arguments.contains("--ui-testing")
+    }
+
     var body: some Scene {
         WindowGroup {
-            // UI先行テストが画面不足を検出するための起動用エントリ。
-            Color.clear
+            RootTabView(isUITesting: isUITesting)
         }
     }
 }

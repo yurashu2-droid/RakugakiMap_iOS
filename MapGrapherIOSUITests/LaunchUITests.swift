@@ -31,6 +31,11 @@ final class LaunchUITests: XCTestCase {
         assertTab(UI.groupsTab, label: "グループ")
         assertTab(UI.notificationsTab, label: "お知らせ")
         assertTab(UI.profileTab, label: "マイページ")
+
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "最小shell起動画面"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
     }
 
     func testSwitchesBetweenFourTabs() throws {

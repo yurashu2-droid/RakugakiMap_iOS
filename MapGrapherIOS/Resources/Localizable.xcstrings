@@ -1,0 +1,193 @@
+{
+  "sourceLanguage" : "ja",
+  "strings" : {
+    "tab.map.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地図"
+          }
+        }
+      }
+    },
+    "tab.groups.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "グループ"
+          }
+        }
+      }
+    },
+    "tab.notifications.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "お知らせ"
+          }
+        }
+      }
+    },
+    "tab.profile.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "マイページ"
+          }
+        }
+      }
+    },
+    "prototype.badge" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開発試作"
+          }
+        }
+      }
+    },
+    "prototype.backendNotice" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "バックエンド未接続のため、実データを表示しない開発試作です。"
+          }
+        }
+      }
+    },
+    "map.preview.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地図表示の準備中"
+          }
+        }
+      }
+    },
+    "map.preview.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地図APIはまだ接続していません。ここからAR動作確認へ進めます。"
+          }
+        }
+      }
+    },
+    "map.arPreview.button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AR動作確認"
+          }
+        }
+      }
+    },
+    "map.placeholder.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "現在地のラクガキ"
+          }
+        }
+      }
+    },
+    "map.placeholder.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "投稿と位置情報の取得は後続実装です。"
+          }
+        }
+      }
+    },
+    "groups.preview.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "グループ画面の準備中"
+          }
+        }
+      }
+    },
+    "groups.preview.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "グループやお題のデータはまだ接続していません。"
+          }
+        }
+      }
+    },
+    "notifications.preview.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "お知らせ画面の準備中"
+          }
+        }
+      }
+    },
+    "notifications.preview.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通知データはまだ接続していません。"
+          }
+        }
+      }
+    },
+    "profile.preview.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "マイページの準備中"
+          }
+        }
+      }
+    },
+    "profile.preview.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アカウント情報はまだ接続していません。"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
