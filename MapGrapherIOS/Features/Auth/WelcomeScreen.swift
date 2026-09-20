@@ -51,6 +51,9 @@ struct WelcomeScreen: View {
                                 do {
                                     _ = try await service.signInWithGoogle()
                                     onSignedIn()
+                                } catch let error as ASWebAuthenticationSessionError
+                                    where error.code == .canceledLogin {
+                                    // 利用者がブラウザを閉じた場合は元の選択画面に戻る。
                                 } catch {
                                     providerError = "Googleログインを完了できませんでした。設定と通信状態を確認してください。"
                                 }
@@ -90,9 +93,11 @@ struct WelcomeScreen: View {
                                         providerError = "Appleログインを完了できませんでした。設定と通信状態を確認してください。"
                                     }
                                 }
-                            case .failure:
+                            case .failure(let error):
                                 appleNonce = ""
-                                providerError = "Appleログインを完了できませんでした。"
+                                if (error as? ASAuthorizationError)?.code != .canceled {
+                                    providerError = "Appleログインを完了できませんでした。"
+                                }
                             }
                         })
                         .signInWithAppleButtonStyle(.black)
