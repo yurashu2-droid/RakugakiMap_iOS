@@ -1,14 +1,16 @@
 # iOS API対応表（T03・初版）
 
-正本: `MapGrapherBackend/docs/shared_interface_registry.md`、Android `SupabaseApiService.kt` / `SupabaseDtos.kt`、`MapGrapherBackend/supabase/migrations/` の適用順（最終 `202607120002_add_group_missions.sql`）。この表は既存APIだけを示す。`create_photo_pin_v2`、`create_rakugaki_v2`、Safety APIは未実装であり、呼び出さない。
+正本: `MapGrapherBackend/docs/shared_interface_registry.md`、Android `SupabaseApiService.kt` / `SupabaseDtos.kt`、`MapGrapherBackend/supabase/migrations/` の適用順（検証用プロジェクトの最終 `202609210001_idempotent_posting_v2.sql`）。投稿v2は検証用DBへ適用済み。Safety APIは未実装であり、呼び出さない。
 
 `SupabaseGateway.rpc(_:parameters:as:)` は既存RPCのJSONをSDKで送受信する入口。Swift DTOは `Infrastructure/Supabase/DTO/` に置く。HTTP/RPC失敗は例外として伝播し、空配列へ置き換えない。日時は小数秒の有無を含むISO 8601、`mission_date` はJSTで決められた `yyyy-MM-dd` を文字列のまま保持する。nullableは `?`、PostgreSQL bigintは `Int64`。所有者の識別はクライアントが送るIDでなくDBの `auth.uid()` を正とする。通常の閲覧RPCは再取得可能だが非冪等の操作を通信断後に自動再送しない。
 
 | RPC | 引数JSONキー | 応答shape / DTO | 空・null / 失敗 | 自動再送 | 後続担当 |
 |---|---|---|---|---|---|
 | `nearby_photos` | `lat,lon,radius_meters` | 配列 `NearbyPhotoDTO` | 0件は正常。`photo_path,thumbnail_path`等はnullable | 読取のみ可 | L02 |
-| `create_photo_pin` | `title,lat,lon,privacy,draw_permission,requires_approval,photo_path,mime_type,byte_size` | 単一 `PhotoRowDTO` | 失敗は例外。`mime_type,byte_size`はnullable | 不可（B01審査待ち） | T11 |
-| `create_rakugaki` | `target_photo_id,target_asset_path` | 単一 `RakugakiRowDTO` | 失敗は例外 | 不可（B01審査待ち） | T11 |
+| `create_photo_pin` | `title,lat,lon,privacy,draw_permission,requires_approval,photo_path,mime_type,byte_size` | 単一 `PhotoRowDTO` | 失敗は例外。`mime_type,byte_size`はnullable | 不可。Android互換用 | 既存 |
+| `create_rakugaki` | `target_photo_id,target_asset_path` | 単一 `RakugakiRowDTO` | 失敗は例外 | 不可。Android互換用 | 既存 |
+| `create_photo_pin_v2` | `client_request_id,title,lat,lon,privacy,draw_permission,requires_approval,photo_path,mime_type,byte_size` | 単一 `PhotoRowDTO`形JSON | 同一ID別入力は`REQUEST_CONFLICT`。削除後再送は保存済み結果を返すため現存保証なし | 同一ID・同一入力のみ可 | T11 |
+| `create_rakugaki_v2` | `client_request_id,target_photo_id,target_asset_path` | 単一 `RakugakiRowDTO`形JSON | `DRAW_FORBIDDEN`等は例外。削除後再送は保存済み結果を返す | 同一ID・同一入力のみ可 | T11 |
 | `approve_rakugaki` | `target_rakugaki_id,approved` | 単一 `RakugakiRowDTO` | 権限違反は例外 | 状態再取得後のみ | T14 |
 | `pending_rakugakis` | `{}` | 配列 `PendingRakugakiDTO` | 0件は正常 | 読取のみ可 | T14 |
 | `history_rakugakis` | `target_photo_id` | 配列 `PendingRakugakiDTO` | 0件は正常 | 読取のみ可 | T14 |

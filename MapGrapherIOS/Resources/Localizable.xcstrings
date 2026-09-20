@@ -1056,6 +1056,842 @@
           }
         }
       }
+    },
+    "posting.capture.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真を投稿"
+          }
+        }
+      }
+    },
+    "posting.capture.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真を選び、安全に準備してからラクガキと公開設定を確認します。"
+          }
+        }
+      }
+    },
+    "posting.capture.choose" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真を選ぶ"
+          }
+        }
+      }
+    },
+    "posting.capture.camera-note" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "カメラ撮影は端末の撮影入口に接続すると利用できます。今は写真ライブラリから選べます。"
+          }
+        }
+      }
+    },
+    "posting.capture.test-fixture" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "テスト用写真を使う"
+          }
+        }
+      }
+    },
+    "posting.capture.preparing" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真を安全に準備しています"
+          }
+        }
+      }
+    },
+    "posting.review.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真を確認"
+          }
+        }
+      }
+    },
+    "posting.review.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この写真を使ってラクガキを追加できます。取り直す場合も下書きは残ります。"
+          }
+        }
+      }
+    },
+    "posting.review.continue" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ラクガキへ進む"
+          }
+        }
+      }
+    },
+    "posting.review.retake" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真を選び直す"
+          }
+        }
+      }
+    },
+    "posting.review.preview" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選択した写真のプレビュー"
+          }
+        }
+      }
+    },
+    "posting.review.unavailable.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真を表示できません"
+          }
+        }
+      }
+    },
+    "posting.review.unavailable.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下書きを残したまま、もう一度写真を選んでください。"
+          }
+        }
+      }
+    },
+    "posting.drawing.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ラクガキを描く"
+          }
+        }
+      }
+    },
+    "posting.drawing.continue" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "描画を確定"
+          }
+        }
+      }
+    },
+    "posting.drawing.skip" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ラクガキをスキップ"
+          }
+        }
+      }
+    },
+    "posting.drawing.unavailable.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "描画を開始できません"
+          }
+        }
+      }
+    },
+    "posting.drawing.unavailable.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真を読み直してから、もう一度お試しください。"
+          }
+        }
+      }
+    },
+    "posting.publish.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "公開設定を確認"
+          }
+        }
+      }
+    },
+    "posting.publish.title.placeholder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真のタイトル"
+          }
+        }
+      }
+    },
+    "posting.publish.title.label" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "タイトル"
+          }
+        }
+      }
+    },
+    "posting.publish.title.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "あとから送信内容を見つけやすい名前を入力してください。"
+          }
+        }
+      }
+    },
+    "posting.publish.location" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "場所"
+          }
+        }
+      }
+    },
+    "posting.publish.location.available" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "位置情報を設定しています"
+          }
+        }
+      }
+    },
+    "posting.publish.location.missing" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "位置情報を取得できません"
+          }
+        }
+      }
+    },
+    "posting.publish.location.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "場所は投稿の表示範囲を決めるために使います。"
+          }
+        }
+      }
+    },
+    "posting.publish.visibility" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真の閲覧範囲"
+          }
+        }
+      }
+    },
+    "posting.publish.draw-permission" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "描画できる人"
+          }
+        }
+      }
+    },
+    "posting.publish.approval" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ラクガキを承認制にする"
+          }
+        }
+      }
+    },
+    "posting.publish.access.header" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "公開範囲と権限"
+          }
+        }
+      }
+    },
+    "posting.publish.access.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "初期値は本人のみです。写真とラクガキの範囲を別々に確認してください。"
+          }
+        }
+      }
+    },
+    "posting.publish.ar" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AR公開を予約する"
+          }
+        }
+      }
+    },
+    "posting.publish.ar.header" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AR"
+          }
+        }
+      }
+    },
+    "posting.publish.ar.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "承認後に、現地でARとして見つけられるようにします。"
+          }
+        }
+      }
+    },
+    "posting.publish.ar.disabled" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ラクガキがないため、AR公開予約は選べません。"
+          }
+        }
+      }
+    },
+    "posting.publish.submit" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下書きを保存して送信待ちにする"
+          }
+        }
+      }
+    },
+    "posting.publish.submit.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存前に投稿成功とは表示しません。通信できない場合も下書きを残します。"
+          }
+        }
+      }
+    },
+    "posting.publish.new-operation" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "内容を変更して送信すると、新しい下書き操作として保存します。"
+          }
+        }
+      }
+    },
+    "posting.visibility.only-me" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本人のみ"
+          }
+        }
+      }
+    },
+    "posting.visibility.friends" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "友達のみ"
+          }
+        }
+      }
+    },
+    "posting.visibility.anyone" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全員"
+          }
+        }
+      }
+    },
+    "posting.draw-permission.only-me" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本人のみ"
+          }
+        }
+      }
+    },
+    "posting.draw-permission.friends" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "友達のみ"
+          }
+        }
+      }
+    },
+    "posting.draw-permission.anyone" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全員"
+          }
+        }
+      }
+    },
+    "posting.status.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送信状況"
+          }
+        }
+      }
+    },
+    "posting.status.waiting" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送信待ち"
+          }
+        }
+      }
+    },
+    "posting.status.waiting.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下書きを端末に保存しました。通信が整うと送信処理を再開します。"
+          }
+        }
+      }
+    },
+    "posting.status.approval-waiting" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "承認が完了するまでAR公開は待機します。"
+          }
+        }
+      }
+    },
+    "posting.status.retry-waiting" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "再送待ち"
+          }
+        }
+      }
+    },
+    "posting.status.retry-waiting.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送信結果を確認できないため、下書きを残して再試行できます。"
+          }
+        }
+      }
+    },
+    "posting.status.needs-login" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ログインが必要です"
+          }
+        }
+      }
+    },
+    "posting.status.needs-login.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下書きは削除していません。ログイン後に送信を再開できます。"
+          }
+        }
+      }
+    },
+    "posting.status.needs-correction" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "確認が必要です"
+          }
+        }
+      }
+    },
+    "posting.status.needs-correction.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "入力を確認してから、下書きを再送してください。"
+          }
+        }
+      }
+    },
+    "posting.status.success" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送信が完了しました"
+          }
+        }
+      }
+    },
+    "posting.status.success.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバーから完了結果を受け取りました。"
+          }
+        }
+      }
+    },
+    "posting.status.retry" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "もう一度送信"
+          }
+        }
+      }
+    },
+    "posting.status.edit" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "内容を確認する"
+          }
+        }
+      }
+    },
+    "posting.status.draft-kept" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下書きは端末に残っています。戻る・取消・失敗で内容を消しません。"
+          }
+        }
+      }
+    },
+    "posting.flow.back" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "戻る"
+          }
+        }
+      }
+    },
+    "posting.flow.close" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "閉じる"
+          }
+        }
+      }
+    },
+    "posting.close.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "投稿を閉じますか？"
+          }
+        }
+      }
+    },
+    "posting.close.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編集した下書きを保存してから閉じるか、明示的に破棄できます。"
+          }
+        }
+      }
+    },
+    "posting.close.empty-detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "投稿を閉じると地図へ戻ります。"
+          }
+        }
+      }
+    },
+    "posting.close.save" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下書きを保存して閉じる"
+          }
+        }
+      }
+    },
+    "posting.close.discard" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下書きを破棄して閉じる"
+          }
+        }
+      }
+    },
+    "posting.close.close" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "閉じる"
+          }
+        }
+      }
+    },
+    "posting.close.cancel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "キャンセル"
+          }
+        }
+      }
+    },
+    "posting.error.invalid-image" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真を読み込めませんでした。"
+          }
+        }
+      }
+    },
+    "posting.error.image-too-large" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真の容量が大きすぎます。別の写真を選んでください。"
+          }
+        }
+      }
+    },
+    "posting.error.dimensions-too-large" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真のサイズが大きすぎます。別の写真を選んでください。"
+          }
+        }
+      }
+    },
+    "posting.error.preparing" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真を安全に準備できませんでした。もう一度お試しください。"
+          }
+        }
+      }
+    },
+    "posting.error.invalid-draft" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下書きの内容を確認してください。"
+          }
+        }
+      }
+    },
+    "posting.error.invalid-draft.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真・タイトル・場所・描画の準備が必要です。"
+          }
+        }
+      }
+    },
+    "posting.error.save" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下書きを保存できませんでした。内容は画面に残っています。"
+          }
+        }
+      }
+    },
+    "posting.error.submission" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送信を完了できませんでした。下書きを残して再試行できます。"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

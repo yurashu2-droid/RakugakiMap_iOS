@@ -193,21 +193,20 @@ Core Dataの`PendingSubmission`は次を保持する。
 
 通常同期は起動・前景復帰・通信復帰・手動再送。iOSのBackgroundTasksは補助であり15分ごとの確実な送信を約束しない。初版では独立した常時バックグラウンドアップロードを必須にしない。強制終了後は次回起動から回復する。[Apple BackgroundTasks](https://developer.apple.com/documentation/backgroundtasks/choosing-background-strategies-for-your-app)
 
-### B01: 冪等化の契約提案（未承認・未実装）
+### B01: 投稿v2の冪等契約（検証用DBに適用済み）
 
-既存のcreate_photo_pin/create_rakugakiを変更せず、v2の追加RPCを提案する。仕様承認まではT11のローカル送信シミュレーションだけ実装可能。本番書込・契約変更はこの計画だけで承認された扱いにしない。
+既存のcreate_photo_pin/create_rakugakiを変更せず、v2の追加RPCを検証用Supabaseに適用した。公開用プロジェクトへの適用とiOSからの実投稿は未検証。詳細は`B01_IDEMPOTENT_POSTING_CONTRACT.md`に合わせる。
 
-- `create_photo_pin_v2(client_request_id uuid, payload jsonb)` → 既存SupabasePhotoRowと同じ単一行。
-- `create_rakugaki_v2(client_request_id uuid, payload jsonb)` → 既存SupabaseRakugakiRowと同じ単一行。
-- payloadのキーは各既存RPCと同じ。owner/userIDの上書きを受け入れない。未定義キーは拒否。
-- owner=auth.uid()、operation kind、client_request_idを一意キーとするoperation receiptを追加する。正規化payloadのhashとresult IDを保存。同一キー・同一入力は同じ結果、異なる入力は`IDEMPOTENCY_CONFLICT`。
+- `create_photo_pin_v2(client_request_id,title,lat,lon,privacy,draw_permission,requires_approval,photo_path,mime_type,byte_size)` → 既存`PhotoRowDTO`と同形の単一JSON object。
+- `create_rakugaki_v2(client_request_id,target_photo_id,target_asset_path)` → 既存`RakugakiRowDTO`と同形の単一JSON object。
+- ownerは`auth.uid()`から取得する。`(actor_id,operation_kind,client_request_id)`をreceiptの一意キーとし、正規化した入力JSONと結果JSONを保存する。同一キー・同一入力は同じ結果、異なる入力は`REQUEST_CONFLICT`。
 - 同時再送はDB内の同一トランザクションとロックで直列化し、投稿作成とreceipt保存を不可分にする。Storageはこのトランザクションの外側。
-- 戻り値対象が削除済みなら`OPERATION_RESULT_DELETED`として再生成しない。別ownerのreceiptは取得不可。anonymous呼出不可。
-- Storage再送で既存オブジェクトがある場合は、同じoperationの自分の画像であることとbyte/hash整合を確認し、異なる内容を上書きしない。照合不可はoutcomeUnknown。
+- 戻り値対象が削除済みでも保存済み結果JSONを返して再生成しない。成功応答は投稿が現在も存在することを保証しない。別ownerのreceiptは取得不可。匿名呼出不可。
+- 新規作成時はStorage管理行のbucket、本人path、owner_id、MIME、サイズを検証する。SQL RPCはオブジェクトストアのバイト実体を直接検証できない。再送時はreceiptを先に照合し、Storageオブジェクトが後に削除されても同じ結果を返す。
 - 旧RPC/Android動作は維持。migrationは追加のみ。既存RLSを緩めず、SECURITY DEFINERが必要ならsearch_path、execute権限、owner検証を別レビューする。
 - toggle_likeは非冪等なので自動再送しない。応答喪失時は再取得して状態確認。AR upsert/回答upsertも古い操作が新操作を上書きしないよう対象ごとに直列化し、再送前に最新状態を確認する。
 
-実装時は共有台帳へ提案を転記し、承認されたsignatureとエラーcodeを確定してからmigrationを作る。安易なUI二度押し禁止だけを重複対策としない。
+署名とエラーcodeはバックエンドの共有台帳と追加migrationを正とする。UIの二度押し禁止だけを重複対策としない。
 
 ## 8. AR・探索の受入仕様
 

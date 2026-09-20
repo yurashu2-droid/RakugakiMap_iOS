@@ -1,21 +1,31 @@
 import SwiftUI
+import MapGrapherCore
 
 @MainActor
 struct RootTabs: View {
     let isUITesting: Bool
     private let photoReader: any PhotoReading
     private let locationProvider: any MapLocationProviding
+    private let assetLoader: PrivateAssetLoader?
+    private let sessionContext: SessionContext?
+    private let postingService: any PostingUIService
     @StateObject private var router: AppRouter
 
     init(
         isUITesting: Bool = false,
         router: AppRouter? = nil,
         photoReader: any PhotoReading = FakePhotoReading(),
-        locationProvider: any MapLocationProviding = FakeMapLocationProvider()
+        locationProvider: any MapLocationProviding = FakeMapLocationProvider(),
+        assetLoader: PrivateAssetLoader? = nil,
+        sessionContext: SessionContext? = nil,
+        postingService: any PostingUIService = FakePostingUIService()
     ) {
         self.isUITesting = isUITesting
         self.photoReader = photoReader
         self.locationProvider = locationProvider
+        self.assetLoader = assetLoader
+        self.sessionContext = sessionContext
+        self.postingService = postingService
         _router = StateObject(wrappedValue: router ?? AppRouter())
     }
 
@@ -24,7 +34,9 @@ struct RootTabs: View {
             MapScreen(
                 isUITesting: isUITesting,
                 photoReader: photoReader,
-                locationProvider: locationProvider
+                locationProvider: locationProvider,
+                assetLoader: assetLoader,
+                sessionContext: sessionContext
             ) { route in
                 router.navigate(to: route)
             }
@@ -69,7 +81,7 @@ struct RootTabs: View {
     private func sheetView(for route: AppRoute) -> some View {
         switch route {
         case .postComposer:
-            PostComposerPlaceholderScreen()
+            PostingFlowScreen(isUITesting: isUITesting, service: postingService)
         default:
             EmptyView()
         }
@@ -81,44 +93,9 @@ struct RootTabs: View {
         case .arPreview:
             ARProbeScreen(isUITesting: isUITesting)
         case .postComposer:
-            PostComposerPlaceholderScreen()
+            PostingFlowScreen(isUITesting: isUITesting, service: postingService)
         default:
             EmptyView()
         }
-    }
-}
-
-@MainActor
-private struct PostComposerPlaceholderScreen: View {
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: AppSpacing.large) {
-                Image(systemName: "camera.fill")
-                    .font(.system(size: 44, weight: .semibold))
-                    .foregroundStyle(AppColors.coral)
-                    .accessibilityHidden(true)
-                Text("route.post.title")
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(AppColors.ink)
-                Text("route.post.detail")
-                    .font(.body)
-                    .foregroundStyle(AppColors.ink.opacity(0.78))
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                Button("route.close") {
-                    dismiss()
-                }
-                    .frame(minHeight: 44)
-            }
-            .padding(AppSpacing.xLarge)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(AppColors.paper.ignoresSafeArea())
-            .navigationTitle("route.post.title")
-            .navigationBarTitleDisplayMode(.inline)
-        }
-        .accessibilityIdentifier("screen.post-composer")
-        .accessibilityLabel(Text("route.post.title"))
     }
 }

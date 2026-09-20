@@ -56,7 +56,9 @@ private struct SessionRootView: View {
             ProgressView("ログイン状態を確認しています")
         case .authenticated:
             RootTabs(photoReader: container.photoReader,
-                     locationProvider: container.mapLocationProvider)
+                     locationProvider: container.mapLocationProvider,
+                     assetLoader: container.assetLoader,
+                     sessionContext: session.context)
                 .id(session.context?.epoch)
         case .signedOut, .awaitingEmailConfirmation, .reauthenticationRequired:
             WelcomeScreen(service: SessionAuthUIAdapter(session: session))

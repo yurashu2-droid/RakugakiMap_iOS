@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import UIKit
 import MapGrapherCore
 
 struct RakugakiSummary: Identifiable, Equatable, Sendable {
@@ -34,20 +35,27 @@ enum PhotoPermissionState: Equatable {
 struct PhotoDetailScreen: View {
     let photo: Photo
     let photoReader: any PhotoReading
+    let assetLoader: PrivateAssetLoader?
+    let sessionContext: SessionContext?
     let rakugakis: [RakugakiSummary]
     let onOpenAR: () -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var permissionState: PhotoPermissionState = .loading
+    @State private var photoImage: UIImage?
 
     init(
         photo: Photo,
         photoReader: any PhotoReading,
+        assetLoader: PrivateAssetLoader? = nil,
+        sessionContext: SessionContext? = nil,
         rakugakis: [RakugakiSummary] = [],
         onOpenAR: @escaping () -> Void = {}
     ) {
         self.photo = photo
         self.photoReader = photoReader
+        self.assetLoader = assetLoader
+        self.sessionContext = sessionContext
         self.rakugakis = rakugakis
         self.onOpenAR = onOpenAR
     }
@@ -57,7 +65,7 @@ struct PhotoDetailScreen: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: AppSpacing.xLarge) {
                     if canView {
-                        PhotoHeroView(photo: photo)
+                        PhotoHeroView(photo: photo, image: photoImage)
 
                         VStack(alignment: .leading, spacing: AppSpacing.small) {
                             Text(photo.title)
@@ -225,10 +233,19 @@ struct PhotoDetailScreen: View {
 
     private func loadPermissions() async {
         permissionState = .loading
+        photoImage = nil
         do {
             let permissions = try await photoReader.permissions(photoID: photo.id)
             guard !Task.isCancelled else { return }
             permissionState = .loaded(permissions)
+            guard permissions.canView, let assetLoader, let sessionContext else { return }
+            let image = try await assetLoader.load(
+                asset: photo.thumbnail ?? photo.asset,
+                targetPixelSize: CGSize(width: 1200, height: 800),
+                context: sessionContext
+            )
+            guard !Task.isCancelled else { return }
+            photoImage = image
         } catch let error as PhotoReadingError {
             guard !Task.isCancelled else { return }
             switch error {
@@ -241,8 +258,22 @@ struct PhotoDetailScreen: View {
             case .serviceUnavailable, .unknown:
                 permissionState = .error
             }
+        } catch let error as AppFailure {
+            guard !Task.isCancelled else { return }
+            photoImage = nil
+            switch error {
+            case .forbidden, .needsLogin, .cancelled:
+                permissionState = .forbidden
+            case .notFound:
+                permissionState = .notFound
+            case .offline:
+                permissionState = .offline
+            default:
+                permissionState = .error
+            }
         } catch {
             guard !Task.isCancelled else { return }
+            photoImage = nil
             permissionState = .error
         }
     }
@@ -251,19 +282,30 @@ struct PhotoDetailScreen: View {
 @MainActor
 private struct PhotoHeroView: View {
     let photo: Photo
+    let image: UIImage?
 
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 22)
                 .fill(AppColors.mint.opacity(0.30))
-            VStack(spacing: AppSpacing.small) {
-                Image(systemName: "photo")
-                    .font(.system(size: 40, weight: .medium))
-                    .foregroundStyle(AppColors.coral)
-                    .accessibilityHidden(true)
-                Text("map.photo-detail.asset-pending")
-                    .font(.subheadline)
-                    .foregroundStyle(AppColors.ink.opacity(0.72))
+            if let image {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 190)
+                    .clipped()
+                    .clipShape(RoundedRectangle(cornerRadius: 22))
+            } else {
+                VStack(spacing: AppSpacing.small) {
+                    Image(systemName: "photo")
+                        .font(.system(size: 40, weight: .medium))
+                        .foregroundStyle(AppColors.coral)
+                        .accessibilityHidden(true)
+                    Text("map.photo-detail.asset-pending")
+                        .font(.subheadline)
+                        .foregroundStyle(AppColors.ink.opacity(0.72))
+                }
             }
         }
         .frame(maxWidth: .infinity)
