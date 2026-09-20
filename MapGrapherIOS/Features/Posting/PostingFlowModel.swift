@@ -1,6 +1,5 @@
 import Combine
 import CryptoKit
-import Combine
 import Foundation
 import ImageIO
 import MapGrapherCore
@@ -136,7 +135,8 @@ final class PostingFlowModel: ObservableObject {
     }
 
     var hasUnsavedDraft: Bool {
-        draft.preparedImage != nil || !draft.title.isEmpty || draft.drawing != nil
+        if step == .status, status?.state == .completed { return false }
+        return draft.preparedImage != nil || !draft.title.isEmpty || draft.drawing != nil
     }
 
     var storesDraftsPersistently: Bool { service.storesDraftsPersistently }
@@ -167,7 +167,7 @@ final class PostingFlowModel: ObservableObject {
         } catch let known as PostingServiceError {
             error = Self.mapError(known)
         } catch {
-            error = .preparingFailed
+            self.error = .preparingFailed
         }
     }
 
@@ -269,12 +269,12 @@ final class PostingFlowModel: ObservableObject {
                 status = try await service.submit(draft)
             } catch {
                 status = PostingSubmissionResult(draftID: draft.id, state: .retryWaiting)
-                error = .submissionFailed
+                self.error = .submissionFailed
             }
             isEditingSubmittedDraft = false
             step = .status
         } catch {
-            error = .saveFailed
+            self.error = .saveFailed
         }
     }
 
@@ -295,7 +295,7 @@ final class PostingFlowModel: ObservableObject {
             error = nil
             return true
         } catch {
-            error = .saveFailed
+            self.error = .saveFailed
             return false
         }
     }

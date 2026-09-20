@@ -52,9 +52,11 @@
 | Auth SDK signup/password/reset/callback/logout | SDKのAuth request（tokenはDTOに渡さない） | SDK sessionまたは確認待ち | signup後sessionなしは確認待ち。復帰時refresh失敗は再認証 | T04 |
 | `GET rest/v1/profiles` | `id=eq.<auth.uid>&select=id,user_unique_id,display_name,avatar_path` | 配列 `ProfileDTO` | 0件はprofile未作成 | T04/T14 |
 | `POST rest/v1/profiles` | `ProfileUpsertDTO`、`Prefer:return=representation` | 配列 `ProfileDTO` | 0件は登録成功扱いしない | T04/T14 |
-| `PATCH rest/v1/profiles` | `id=eq.<auth.uid>`、変更キー、`Prefer:return=representation`をiOS adapterで明示 | 配列 `ProfileDTO` | 0件は更新成功扱いしない | T14 |
-| `GET/POST rest/v1/albums` | `owner_id=eq.<auth.uid>` / `title,description` | 配列 `AlbumDTO` | 0件は一覧では正常、作成時は異常 | T14 |
-| `GET/POST rest/v1/album_photos` | `album_id=eq.<uuid>` / `album_id,photo_id` | 配列 `AlbumPhotoDTO` | 0件は一覧では正常、追加時は異常 | T14 |
+| `PATCH rest/v1/profiles` | `id=eq.<auth.uid>`、変更キー、`Prefer:return=representation`をiOS adapterで明示。avatar解除は明示的`null` | 配列 `ProfileDTO` | 0件は更新成功扱いしない | T14 |
+| `GET/POST rest/v1/albums` | 一覧は`owner_id=eq.<auth.uid>`。作成JSONは`owner_id=auth.uid(),title,description`（DB列にdefaultなし） | 配列 `AlbumDTO` | 0件は一覧では正常、作成時は異常。応答消失後の再POSTは禁止 | T14 |
+| `PATCH/DELETE rest/v1/albums` | 対象`id=eq.<uuid>`を限定。更新は`title,description`の変更分 | 更新は配列 `AlbumDTO`、削除はvoid | 未所有・未存在を成功にしない | T14 |
+| `GET/POST rest/v1/album_photos` | 一覧は`album_id=eq.<uuid>`。追加は`album_id,photo_id` | 配列 `AlbumPhotoDTO` | 0件は一覧では正常、追加時は異常。写真の閲覧権限は別途確認 | T14 |
+| `DELETE rest/v1/album_photos` | `album_id=eq.<uuid>&photo_id=eq.<uuid>` | void | リンクだけ削除し、元写真は保持 | T14 |
 | `POST storage/v1/object/{bucket}/{path}` | private `photos/rakugakis/avatars`、画像bytes、`x-upsert:false` | Storage upload応答 | 競合を別画像への上書きで回避しない | T11/T14 |
 | `POST storage/v1/object/sign/{bucket}/{path}` | `expiresIn` | 一時的signed URL | 永続DBへURLを保存しない | T05 |
 
