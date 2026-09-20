@@ -8,6 +8,7 @@ struct MapScreen: View {
     private let photoReader: any PhotoReading
     private let assetLoader: PrivateAssetLoader?
     private let sessionContext: SessionContext?
+    private let photoService: any PhotoDetailUIService
 
     @StateObject private var model: MapScreenModel
     @State private var sheetRoute: MapSheetRoute?
@@ -19,6 +20,7 @@ struct MapScreen: View {
         locationProvider: any MapLocationProviding = FakeMapLocationProvider(),
         assetLoader: PrivateAssetLoader? = nil,
         sessionContext: SessionContext? = nil,
+        photoService: any PhotoDetailUIService = FakePhotoDetailUIService(),
         onPresentRoute: @escaping (AppRoute) -> Void = { _ in }
     ) {
         self.isUITesting = isUITesting
@@ -26,6 +28,7 @@ struct MapScreen: View {
         self.photoReader = photoReader
         self.assetLoader = assetLoader
         self.sessionContext = sessionContext
+        self.photoService = photoService
         _model = StateObject(
             wrappedValue: MapScreenModel(
                 photoReader: photoReader,
@@ -209,6 +212,7 @@ struct MapScreen: View {
                     photoReader: photoReader,
                     assetLoader: assetLoader,
                     sessionContext: sessionContext,
+                    photoService: photoService,
                     onOpenAR: { onPresentRoute(.arPreview) }
                 )
             } else {

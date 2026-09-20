@@ -39,10 +39,16 @@ struct PhotoDetailScreen: View {
     let sessionContext: SessionContext?
     let rakugakis: [RakugakiSummary]
     let onOpenAR: () -> Void
+    let photoService: any PhotoDetailUIService
 
     @Environment(\.dismiss) private var dismiss
     @State private var permissionState: PhotoPermissionState = .loading
     @State private var photoImage: UIImage?
+    @State private var likeState: PhotoLikeState
+    @State private var isPhotoOperationBusy = false
+    @State private var photoOperationError: Error?
+    @State private var didCompletePhotoAction = false
+    @State private var showsDeleteDialog = false
 
     init(
         photo: Photo,
@@ -50,7 +56,8 @@ struct PhotoDetailScreen: View {
         assetLoader: PrivateAssetLoader? = nil,
         sessionContext: SessionContext? = nil,
         rakugakis: [RakugakiSummary] = [],
-        onOpenAR: @escaping () -> Void = {}
+        onOpenAR: @escaping () -> Void = {},
+        photoService: any PhotoDetailUIService = FakePhotoDetailUIService()
     ) {
         self.photo = photo
         self.photoReader = photoReader
@@ -58,6 +65,10 @@ struct PhotoDetailScreen: View {
         self.sessionContext = sessionContext
         self.rakugakis = rakugakis
         self.onOpenAR = onOpenAR
+        self.photoService = photoService
+        _likeState = State(
+            initialValue: PhotoLikeState(isLiked: photo.likedByMe, likeCount: photo.likeCount)
+        )
     }
 
     var body: some View {
@@ -98,6 +109,16 @@ struct PhotoDetailScreen: View {
                 }
             }
         }
+        .confirmationDialog(
+            "photo.delete.confirm",
+            isPresented: $showsDeleteDialog,
+            titleVisibility: .visible
+        ) {
+            Button("photo.delete", role: .destructive) {
+                Task { await deletePhoto() }
+            }
+            Button("posting.close.cancel", role: .cancel) {}
+        }
         .accessibilityIdentifier("screen.photo-detail")
         .accessibilityLabel(Text("map.photo-detail.title"))
         .task(id: photo.id) {
@@ -132,6 +153,71 @@ struct PhotoDetailScreen: View {
                 .buttonStyle(.bordered)
                 .disabled(!canView)
                 .accessibilityIdentifier("photo.ar.button")
+            }
+
+            HStack(spacing: AppSpacing.medium) {
+                Button {
+                    Task { await toggleLike() }
+                } label: {
+                    Label(
+                        likeState.isLiked ? "photo.like.remove" : "photo.like",
+                        systemImage: likeState.isLiked ? "heart.fill" : "heart"
+                    )
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                }
+                .buttonStyle(.bordered)
+                .disabled(!canView || isPhotoOperationBusy)
+                .accessibilityIdentifier("photo.like.button")
+
+                Text("\(likeState.likeCount)")
+                    .font(.subheadline.monospacedDigit())
+                    .accessibilityLabel(Text("photo.like.count"))
+                    .accessibilityIdentifier("photo.like.count")
+            }
+
+            if isOwner {
+                HStack(spacing: AppSpacing.medium) {
+                    NavigationLink {
+                        PhotoSettingsScreen(
+                            photoID: photo.id,
+                            initial: PhotoSettingsSnapshot(
+                                visibility: photo.visibility,
+                                drawPermission: photo.drawPermission,
+                                requiresApproval: photo.requiresApproval
+                            ),
+                            service: photoService
+                        )
+                    } label: {
+                        Label("photo.settings", systemImage: "slider.horizontal.3")
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("photo.settings.button")
+
+                    Button {
+                        showsDeleteDialog = true
+                    } label: {
+                        Label("photo.delete", systemImage: "trash")
+                            .labelStyle(.iconOnly)
+                            .frame(width: 44, height: 44)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.red)
+                    .disabled(isPhotoOperationBusy)
+                    .accessibilityLabel(Text("photo.delete"))
+                    .accessibilityIdentifier("photo.delete.button")
+                }
+            }
+
+            if didCompletePhotoAction {
+                SocialActionNotice(dataMode: photoService.dataMode)
+            }
+            if let photoOperationError {
+                Text(PhotoDetailUIMessage.errorKey(for: photoOperationError))
+                    .font(.subheadline)
+                    .foregroundStyle(.red)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("photo.action.error")
             }
 
             switch permissionState {
@@ -229,6 +315,48 @@ struct PhotoDetailScreen: View {
             return permissions.canDraw
         }
         return false
+    }
+
+    private var isOwner: Bool {
+        if case .loaded(let permissions) = permissionState {
+            return permissions.isOwner
+        }
+        return false
+    }
+
+    private func toggleLike() async {
+        guard canView, !isPhotoOperationBusy else { return }
+        isPhotoOperationBusy = true
+        photoOperationError = nil
+        didCompletePhotoAction = false
+        defer { isPhotoOperationBusy = false }
+        do {
+            likeState = try await photoService.toggleLike(
+                photoID: photo.id,
+                liked: !likeState.isLiked
+            )
+            didCompletePhotoAction = true
+        } catch {
+            photoOperationError = error
+        }
+    }
+
+    private func deletePhoto() async {
+        guard isOwner, !isPhotoOperationBusy else { return }
+        isPhotoOperationBusy = true
+        photoOperationError = nil
+        didCompletePhotoAction = false
+        defer { isPhotoOperationBusy = false }
+        do {
+            try await photoService.deletePhoto(photoID: photo.id)
+            if photoService.dataMode == .live {
+                dismiss()
+            } else {
+                didCompletePhotoAction = true
+            }
+        } catch {
+            photoOperationError = error
+        }
     }
 
     private func loadPermissions() async {

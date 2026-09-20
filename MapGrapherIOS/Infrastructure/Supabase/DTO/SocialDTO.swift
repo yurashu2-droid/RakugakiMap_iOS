@@ -20,4 +20,5 @@ struct FriendRequestRowDTO: Decodable, Sendable {
     let requesterId: UUID?
     let addresseeId: UUID?
     let status: String?
+    let createdAt: Date?
 }

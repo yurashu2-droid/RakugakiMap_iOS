@@ -9,6 +9,10 @@ struct RootTabs: View {
     private let assetLoader: PrivateAssetLoader?
     private let sessionContext: SessionContext?
     private let postingService: any PostingUIService
+    private let socialService: any SocialProfileUIService
+    private let photoService: any PhotoDetailUIService
+    private let arRepository: (any ARExperienceServing)?
+    private let arSession: (any SessionProviding)?
     @StateObject private var router: AppRouter
 
     init(
@@ -18,7 +22,11 @@ struct RootTabs: View {
         locationProvider: any MapLocationProviding = FakeMapLocationProvider(),
         assetLoader: PrivateAssetLoader? = nil,
         sessionContext: SessionContext? = nil,
-        postingService: any PostingUIService = FakePostingUIService()
+        postingService: any PostingUIService = FakePostingUIService(),
+        socialService: any SocialProfileUIService = FakeSocialProfileUIService(),
+        photoService: any PhotoDetailUIService = FakePhotoDetailUIService(),
+        arRepository: (any ARExperienceServing)? = nil,
+        arSession: (any SessionProviding)? = nil
     ) {
         self.isUITesting = isUITesting
         self.photoReader = photoReader
@@ -26,6 +34,10 @@ struct RootTabs: View {
         self.assetLoader = assetLoader
         self.sessionContext = sessionContext
         self.postingService = postingService
+        self.socialService = socialService
+        self.photoService = photoService
+        self.arRepository = arRepository
+        self.arSession = arSession
         _router = StateObject(wrappedValue: router ?? AppRouter())
     }
 
@@ -36,7 +48,8 @@ struct RootTabs: View {
                 photoReader: photoReader,
                 locationProvider: locationProvider,
                 assetLoader: assetLoader,
-                sessionContext: sessionContext
+                sessionContext: sessionContext,
+                photoService: photoService
             ) { route in
                 router.navigate(to: route)
             }
@@ -60,7 +73,7 @@ struct RootTabs: View {
                         .accessibilityLabel(Text(AppStrings.notifications))
                 }
 
-            ProfilePrototypeScreen()
+            ProfileScreen(service: socialService)
                 .tag(AppRoute.Tab.profile)
                 .tabItem {
                     Label(AppStrings.profile, systemImage: "person.crop.circle.fill")
@@ -91,7 +104,12 @@ struct RootTabs: View {
     private func fullScreenView(for route: AppRoute) -> some View {
         switch route {
         case .arPreview:
-            ARProbeScreen(isUITesting: isUITesting)
+            if let arRepository, let assetLoader, let sessionContext, let arSession {
+                ARExplorerFlow(repository: arRepository, assetLoader: assetLoader,
+                               session: arSession, context: sessionContext)
+            } else {
+                ARProbeScreen(isUITesting: isUITesting)
+            }
         case .postComposer:
             PostingFlowScreen(isUITesting: isUITesting, service: postingService)
         default:

@@ -60,7 +60,11 @@ private struct SessionRootView: View {
                          locationProvider: container.mapLocationProvider,
                          assetLoader: container.assetLoader,
                          sessionContext: context,
-                         postingService: container.postingService(for: context))
+                         postingService: container.postingService(for: context),
+                         socialService: container.socialService(for: context),
+                         photoService: container.photoDetailService(for: context),
+                         arRepository: container.arRepository,
+                         arSession: container.session)
                     .id(context.epoch)
             } else {
                 ProgressView("ログイン状態を確認しています")
