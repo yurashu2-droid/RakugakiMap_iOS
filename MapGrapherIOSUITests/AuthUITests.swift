@@ -79,7 +79,7 @@ final class AuthUITests: XCTestCase {
         email.typeText("test@example.com")
         app.buttons[UI.submit].tap()
 
-        XCTAssertTrue(app.otherElements[UI.resetSent].waitForExistence(timeout: 5))
+        XCTAssertTrue(screen(UI.resetSent, in: app).waitForExistence(timeout: 5))
     }
 
     @discardableResult

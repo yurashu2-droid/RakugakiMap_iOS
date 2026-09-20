@@ -1,12 +1,19 @@
 import SwiftUI
+import MapGrapherCore
 
 @MainActor
 struct ProfileScreen: View {
     private let service: any SocialProfileUIService
+    private let arRepository: (any ARExperienceServing)?
+    private let sessionContext: SessionContext?
     @StateObject private var model: ProfileScreenModel
 
-    init(service: any SocialProfileUIService = FakeSocialProfileUIService()) {
+    init(service: any SocialProfileUIService = FakeSocialProfileUIService(),
+         arRepository: (any ARExperienceServing)? = nil,
+         sessionContext: SessionContext? = nil) {
         self.service = service
+        self.arRepository = arRepository
+        self.sessionContext = sessionContext
         _model = StateObject(wrappedValue: ProfileScreenModel(service: service))
     }
 
@@ -111,7 +118,8 @@ struct ProfileScreen: View {
             .accessibilityIdentifier("profile.friend-requests")
 
             NavigationLink {
-                HistoryScreen(service: service)
+                HistoryScreen(service: service, arRepository: arRepository,
+                              sessionContext: sessionContext)
             } label: {
                 Label(AppStrings.profileHistory, systemImage: "clock.arrow.circlepath")
                     .frame(maxWidth: .infinity, alignment: .leading)

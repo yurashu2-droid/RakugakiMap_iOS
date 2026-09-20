@@ -37,7 +37,7 @@ final class MapUITests: XCTestCase {
         XCTAssertTrue(firstPhoto.waitForExistence(timeout: 5))
         firstPhoto.tap()
 
-        XCTAssertTrue(app.otherElements[UI.photoDetailScreen].waitForExistence(timeout: 5))
+        XCTAssertTrue(screen(UI.photoDetailScreen, in: app).waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons[UI.arButton].waitForExistence(timeout: 5))
     }
 

@@ -1,12 +1,19 @@
 import SwiftUI
+import MapGrapherCore
 
 @MainActor
 struct HistoryScreen: View {
     private let service: any SocialProfileUIService
+    private let arRepository: (any ARExperienceServing)?
+    private let sessionContext: SessionContext?
     @StateObject private var model: HistoryScreenModel
 
-    init(service: any SocialProfileUIService = FakeSocialProfileUIService()) {
+    init(service: any SocialProfileUIService = FakeSocialProfileUIService(),
+         arRepository: (any ARExperienceServing)? = nil,
+         sessionContext: SessionContext? = nil) {
         self.service = service
+        self.arRepository = arRepository
+        self.sessionContext = sessionContext
         _model = StateObject(wrappedValue: HistoryScreenModel(service: service))
     }
 
@@ -47,6 +54,15 @@ struct HistoryScreen: View {
                         historyRow(item)
                     }
                     .accessibilityIdentifier("history.row.\(item.id.uuidString)")
+                } else if item.status.isApprovedStatus,
+                          let arRepository, let sessionContext {
+                    NavigationLink {
+                        ARPublishSettingsScreen(photoID: item.photoID, rakugakiID: item.id,
+                                                context: sessionContext, repository: arRepository)
+                    } label: {
+                        historyRow(item)
+                    }
+                    .accessibilityIdentifier("history.ar-publish.\(item.id.uuidString)")
                 } else {
                     historyRow(item)
                         .accessibilityIdentifier("history.row.\(item.id.uuidString)")

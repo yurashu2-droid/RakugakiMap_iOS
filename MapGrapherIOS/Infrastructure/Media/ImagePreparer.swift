@@ -67,8 +67,13 @@ struct ImagePreparer: Sendable {
             guard let destination = CGImageDestinationCreateWithURL(
                 temporary as CFURL, UTType.jpeg.identifier as CFString, 1, nil
             ) else { throw ImagePreparationError.outputFailed }
-            CGImageDestinationAddImage(destination, normalized,
-                                       [kCGImageDestinationLossyCompressionQuality: 0.8] as CFDictionary)
+            // 入力元のメタデータを合成せず、位置情報とXMPも出力側で明示的に除外する。
+            CGImageDestinationAddImage(destination, normalized, [
+                kCGImageDestinationLossyCompressionQuality: 0.8,
+                kCGImageDestinationMergeMetadata: false,
+                kCGImageMetadataShouldExcludeGPS: true,
+                kCGImageMetadataShouldExcludeXMP: true
+            ] as CFDictionary)
             guard CGImageDestinationFinalize(destination) else { throw ImagePreparationError.outputFailed }
             guard !ImageMetadataInspector.hasSensitiveMetadata(at: temporary) else {
                 throw ImagePreparationError.metadataRemovalFailed

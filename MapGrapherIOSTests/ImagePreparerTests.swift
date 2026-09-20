@@ -21,7 +21,8 @@ final class ImagePreparerTests: XCTestCase {
         let destination = try XCTUnwrap(CGImageDestinationCreateWithURL(input as CFURL, UTType.jpeg.identifier as CFString, 1, nil))
         CGImageDestinationAddImage(destination, image, [
             kCGImagePropertyGPSDictionary: [kCGImagePropertyGPSLatitude: 35.0,
-                                             kCGImagePropertyGPSLongitude: 139.0]
+                                             kCGImagePropertyGPSLongitude: 139.0],
+            kCGImagePropertyExifDictionary: [kCGImagePropertyExifUserComment: "private note"]
         ] as CFDictionary)
         XCTAssertTrue(CGImageDestinationFinalize(destination))
 
@@ -34,6 +35,8 @@ final class ImagePreparerTests: XCTestCase {
         let source = try XCTUnwrap(CGImageSourceCreateWithURL(prepared.fileURL as CFURL, nil))
         let properties = try XCTUnwrap(CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any])
         XCTAssertNil(properties[kCGImagePropertyGPSDictionary])
+        let exif = properties[kCGImagePropertyExifDictionary] as? [CFString: Any]
+        XCTAssertNil(exif?[kCGImagePropertyExifUserComment])
     }
 
     func testInvalidImageDoesNotCreateOutput() async throws {
