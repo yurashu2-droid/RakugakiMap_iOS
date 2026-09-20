@@ -60,4 +60,76 @@ final class IdentityTests: XCTestCase {
         XCTAssertNotEqual(original, SessionContext(userID: userID, epoch: nextEpoch))
         XCTAssertNotEqual(original, SessionContext(userID: otherUserID, epoch: epoch))
     }
+
+    func testAssetReferenceRejectsEmptyAndURLLikeStoragePaths() {
+        XCTAssertNil(AssetReference(bucket: "", path: "users/a/photo.jpg"))
+        XCTAssertNil(AssetReference(bucket: "   ", path: "users/a/photo.jpg"))
+        XCTAssertNil(AssetReference(bucket: "photos", path: ""))
+        XCTAssertNil(AssetReference(bucket: "photos", path: "  "))
+        XCTAssertNil(AssetReference(bucket: "photos", path: "https://example.test/photo.jpg"))
+        XCTAssertNil(AssetReference(bucket: "https://example.test", path: "users/a/photo.jpg"))
+        XCTAssertNil(AssetReference(bucket: "photos", path: "/users/a/photo.jpg"))
+        XCTAssertNil(AssetReference(bucket: "photos", path: "users/../photo.jpg"))
+        XCTAssertNotNil(AssetReference(bucket: "photos", path: "users/a/photo.jpg"))
+    }
+
+    func testAssetReferenceDecodingCannotBypassPathValidation() {
+        let decoder = JSONDecoder()
+        let invalid = [
+            #"{"bucket":"photos","path":"https://example.test/photo.jpg"}"#,
+            #"{"bucket":"photos","path":""}"#,
+            #"{"bucket":"","path":"users/a/photo.jpg"}"#,
+        ]
+
+        for json in invalid {
+            XCTAssertThrowsError(try decoder.decode(AssetReference.self, from: Data(json.utf8)))
+        }
+    }
+
+    func testLocationSampleRejectsUnusableAccuracy() throws {
+        let point = try XCTUnwrap(GeoPoint(latitude: 35, longitude: 139))
+        let now = Date(timeIntervalSince1970: 2_000)
+
+        XCTAssertNil(LocationSample(point: point, horizontalAccuracyM: -1, timestamp: now))
+        XCTAssertNil(LocationSample(point: point, horizontalAccuracyM: .nan, timestamp: now))
+        XCTAssertNil(LocationSample(point: point, horizontalAccuracyM: .infinity, timestamp: now))
+        XCTAssertNil(LocationSample(
+            point: point,
+            horizontalAccuracyM: 5,
+            timestamp: Date(timeIntervalSince1970: .nan)
+        ))
+        XCTAssertNotNil(LocationSample(point: point, horizontalAccuracyM: 0, timestamp: now))
+    }
+
+    func testSignedAssetExpiresAndCannotCrossSessionEpoch() {
+        let ownerID = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
+        let otherOwnerID = UUID(uuidString: "00000000-0000-0000-0000-000000000002")!
+        let epoch = UUID(uuidString: "00000000-0000-0000-0000-000000000003")!
+        let nextEpoch = UUID(uuidString: "00000000-0000-0000-0000-000000000004")!
+        let context = SessionContext(userID: ownerID, epoch: epoch)
+        let expiresAt = Date(timeIntervalSince1970: 2_100)
+        let asset = SignedAsset(
+            url: URL(string: "http://localhost:54321/storage/v1/object/sign/example")!,
+            expiresAt: expiresAt,
+            context: context
+        )
+
+        XCTAssertTrue(asset.isUsable(for: context, now: Date(timeIntervalSince1970: 2_099)))
+        XCTAssertFalse(asset.isUsable(for: context, now: expiresAt))
+        XCTAssertFalse(asset.isUsable(for: context, now: Date(timeIntervalSince1970: .nan)))
+        XCTAssertFalse(asset.isUsable(
+            for: SessionContext(userID: ownerID, epoch: nextEpoch),
+            now: Date(timeIntervalSince1970: 2_099)
+        ))
+        XCTAssertFalse(asset.isUsable(
+            for: SessionContext(userID: otherOwnerID, epoch: epoch),
+            now: Date(timeIntervalSince1970: 2_099)
+        ))
+        let impossibleExpiry = SignedAsset(
+            url: asset.url,
+            expiresAt: Date(timeIntervalSince1970: .infinity),
+            context: context
+        )
+        XCTAssertFalse(impossibleExpiry.isUsable(for: context, now: Date(timeIntervalSince1970: 2_099)))
+    }
 }

@@ -31,14 +31,15 @@ public enum SubmissionState: String, Codable, Sendable {
 public enum SubmissionTransition {
     public static func allows(from: SubmissionState, to: SubmissionState,
                               requiresRemoteDependency: Bool,
-                              dependencyRemoteID: UUID?) -> Bool
+                              dependencyRemoteID: UUID?,
+                              resumeStage: SubmissionResumeStage) -> Bool
 }
 ```
 
 `GeoPoint` は緯度±90・経度±180を含み、範囲外と非finite値を拒否する。`Codable`復元でも検証を迂回させない。未知の公開範囲、承認状態、投稿状態は復号エラーとし、既定値で補完しない。
 
-`RevealGate` は距離が半径以下、精度が0〜25m、サンプル経過が0〜10秒の連続する異なる時刻の2サンプルで解放する。半径は10〜200mだけ有効。同一時刻は加算せず、無効値・範囲外は連続数を戻す。古い順序のサンプルは加算しない。解放後は探索中に再ロックしない。
+`RevealGate` は距離が半径以下、精度が0〜25m、サンプル経過が0〜10秒の連続する異なる時刻の2サンプルで解放する。半径は10〜200mだけ有効。同一時刻は加算せず、無効値・範囲外は連続数を戻す。時刻が有効な観測は距離が範囲外でも最新時刻を保持し、遅延した古い観測による連続数の回復を防ぐ。未来や古すぎる時刻は最新時刻を進めない。新しいサンプルの時点で前回の有効サンプルが10秒超古ければ、新しいサンプルを連続列の1個目とする。解放後は探索中に再ロックしない。
 
-`SubmissionTransition` は通常工程を一段ずつ進める。依存が必要な工程の`queued → uploading`は先行工程のremote IDがない限り拒否する。`completed`と`cancelled`からの再進行、逆行、同状態遷移を拒否する。認証と再試行からの復帰は許す。`outcomeUnknown`からの再uploadを拒否する。状態遷移はローカル制約であり、サーバーの権限判定や冪等性の代わりにはしない。
+`SubmissionTransition` は通常工程を一段ずつ進める。呼び出し元は保存行の`resumeStage`を必ず明示し、省略時の`.upload`補完を設けない。`queued`/`retryWaiting`/`needsLogin`から`uploading`へは`resumeStage == .upload`、`registering`へは`resumeStage == .register`のときだけ進める。`uploading → registering`は通常の工程完了として許す。依存が必要な`uploading`/`registering`開始には先行工程のremote IDが必要。`completed`と`cancelled`からの再進行、逆行、同状態遷移を拒否する。認証と再試行からの復帰は許す。`outcomeUnknown`からの再uploadを拒否する。状態遷移はローカル制約であり、サーバーの権限判定や冪等性の代わりにはしない。
 
 Windows環境にSwift/Xcodeがないため、ここではコンパイル・テスト未実行。Sources実装前のREDと、実装後のGREENをMac上のActionsで確認する。

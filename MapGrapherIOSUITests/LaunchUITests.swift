@@ -21,16 +21,9 @@ final class LaunchUITests: XCTestCase {
 
     private var app: XCUIApplication!
 
-    override func setUp() async throws {
-        try await super.setUp()
-        continueAfterFailure = false
-
-        app = XCUIApplication()
-        app.launchArguments = [UI.launchArgument]
-        app.launch()
-    }
-
     func testLaunchesJapaneseShellWithFourTabs() throws {
+        launchApp()
+
         XCTAssertTrue(screen(UI.mapScreen).waitForExistence(timeout: 5))
         XCTAssertEqual(screen(UI.mapScreen).label, "地図")
 
@@ -41,6 +34,8 @@ final class LaunchUITests: XCTestCase {
     }
 
     func testSwitchesBetweenFourTabs() throws {
+        launchApp()
+
         tapTab(UI.groupsTab, screen: UI.groupsScreen, label: "グループ")
         tapTab(UI.notificationsTab, screen: UI.notificationsScreen, label: "お知らせ")
         tapTab(UI.profileTab, screen: UI.profileScreen, label: "マイページ")
@@ -48,6 +43,8 @@ final class LaunchUITests: XCTestCase {
     }
 
     func testOpensARPrototypeFromMap() throws {
+        launchApp()
+
         XCTAssertTrue(screen(UI.mapScreen).waitForExistence(timeout: 5))
 
         let arButton = app.buttons[UI.arPreviewButton]
@@ -59,6 +56,15 @@ final class LaunchUITests: XCTestCase {
         let arScreen = screen(UI.arPreviewScreen)
         XCTAssertTrue(arScreen.waitForExistence(timeout: 5))
         XCTAssertEqual(arScreen.label, "AR試作")
+    }
+
+    @MainActor
+    private func launchApp() {
+        continueAfterFailure = false
+
+        app = XCUIApplication()
+        app.launchArguments = [UI.launchArgument]
+        app.launch()
     }
 
     private func screen(_ identifier: String) -> XCUIElement {

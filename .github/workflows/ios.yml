@@ -58,6 +58,7 @@ jobs:
       - name: Unsigned device build
         run: bash scripts/verify-ios.sh build
       - name: Select simulator
+        id: simulator
         run: |
           simulator_id=$(xcrun simctl list devices available --json | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for x in d["devices"].get("com.apple.CoreSimulator.SimRuntime.iOS-18-5", []) if "iPhone" in x["name"]))')
           echo "IOS_SIMULATOR_ID=$simulator_id" >> "$GITHUB_ENV"
@@ -66,6 +67,7 @@ jobs:
       - name: Unit tests
         run: bash scripts/verify-ios.sh unit
       - name: UI tests
+        if: ${{ !cancelled() && steps.simulator.outcome == 'success' }}
         run: bash scripts/verify-ios.sh ui
       - name: Test results
         if: always()

@@ -24,6 +24,7 @@ open MapGrapherIOS.xcodeproj
 
 `project.yml`がprojectの正本。構成を変更したら生成scriptを再実行する。
 Coreだけなら`bash scripts/verify-ios.sh core`。テスト結果は`.build/verification/`に残る。
+unitは`MapGrapherIOS`、UIは`MapGrapherIOSUI`という共有schemeで分離し、一方のテストコードのコンパイル失敗が他方の実行を妨げないようにする。
 
 ## 実機
 

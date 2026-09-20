@@ -62,4 +62,10 @@ schemes:
       gatherCoverageData: true
       targets:
         - MapGrapherIOSTests
+  MapGrapherIOSUI:
+    build:
+      targets:
+        MapGrapherIOS: all
+    test:
+      targets:
         - MapGrapherIOSUITests
