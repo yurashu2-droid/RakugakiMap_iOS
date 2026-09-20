@@ -45,7 +45,8 @@ final class SupabaseAuthRepository: AuthSessionServicing {
 
     func signUp(email: String, password: String, displayName: String) async throws -> UUID? {
         let response = try await client.auth.signUp(email: email, password: password,
-                                                     data: ["display_name": .string(displayName)])
+                                                     data: ["display_name": .string(displayName)],
+                                                     redirectTo: URL(string: "rakugakimap-dev://auth/callback"))
         return response.session?.user.id
     }
 

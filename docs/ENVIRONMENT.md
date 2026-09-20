@@ -1,5 +1,11 @@
 # 開発環境
 
+## Supabase のメール認証
+
+iOS の新規登録・パスワード再設定メールからアプリに戻すため、使用する Supabase プロジェクトの Authentication → URL Configuration → Redirect URLs に `rakugakimap-dev://auth/callback` を登録する。アプリは新規登録時にこの URL を `redirectTo` として送信する。既に送信済みのメールのリンク先は後から変わらない。
+
+Site URL は Android など同じプロジェクトを使うクライアントの既定値にも影響するため、iOS 用 URL へ一括変更しない。
+
 ## 自動検証
 
 - GitHub Actions: `macos-15`。最初の実測はarm64 / macOS 15.7.9。
