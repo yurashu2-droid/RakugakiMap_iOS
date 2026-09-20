@@ -19,6 +19,24 @@ final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
     private var startGeneration = 0
     private var isSceneActive = true
     private var permissionWasGranted = false
+    private var contentImage: UIImage?
+    private var contentWidthM: Double = 1
+
+    func setContent(image: UIImage, displayWidthM: Double) throws {
+        guard let pixels = image.cgImage else { throw ARImagePlaneError.missingPixels }
+        _ = try ARPlaneGeometry(pixelWidth: Double(pixels.width),
+                                pixelHeight: Double(pixels.height),
+                                displayWidthM: displayWidthM)
+        resetPlacement()
+        contentImage = image
+        contentWidthM = displayWidthM
+    }
+
+    func clearContent() {
+        resetPlacement()
+        contentImage = nil
+        contentWidthM = 1
+    }
 
     private func isCurrentSession(_ identifier: ObjectIdentifier) -> Bool {
         guard let arView else { return false }
@@ -129,8 +147,9 @@ final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
         }
 
         do {
-            let image = ARImagePlaneFactory.makeFixtureImage()
-            let model = try ARImagePlaneFactory.makeEntity(image: image)
+            let image = contentImage ?? ARImagePlaneFactory.makeFixtureImage()
+            let model = try ARImagePlaneFactory.makeEntity(
+                image: image, displayWidthM: contentWidthM)
             model.position.y = 0.002
 
             // 新しい板の準備ができてから古いanchorを除去し、常に1枚だけにする。

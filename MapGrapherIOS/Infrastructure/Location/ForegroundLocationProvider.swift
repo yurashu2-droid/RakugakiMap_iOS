@@ -1,9 +1,24 @@
 @preconcurrency import CoreLocation
 import MapGrapherCore
 
+enum ARLocationAccess: Equatable, Sendable {
+    case notDetermined
+    case allowed
+    case reducedAccuracy
+    case denied
+}
+
+@MainActor
+protocol ARLocationProviding {
+    var access: ARLocationAccess { get }
+    func updates() -> AsyncStream<LocationSample>
+    func start()
+    func stop()
+}
+
 /// 地図・現地探索の表示中だけ位置を更新する。権限は利用者が操作を始めた時に要求する。
 @MainActor
-final class ForegroundLocationProvider: NSObject, CLLocationManagerDelegate {
+final class ForegroundLocationProvider: NSObject, CLLocationManagerDelegate, ARLocationProviding {
     private let manager = CLLocationManager()
     private var continuation: AsyncStream<LocationSample>.Continuation?
     private(set) var isRunning = false
@@ -17,6 +32,15 @@ final class ForegroundLocationProvider: NSObject, CLLocationManagerDelegate {
 
     var authorizationStatus: CLAuthorizationStatus { manager.authorizationStatus }
     var accuracyAuthorization: CLAccuracyAuthorization { manager.accuracyAuthorization }
+    var access: ARLocationAccess {
+        switch manager.authorizationStatus {
+        case .notDetermined: return .notDetermined
+        case .denied, .restricted: return .denied
+        case .authorizedAlways, .authorizedWhenInUse:
+            return manager.accuracyAuthorization == .fullAccuracy ? .allowed : .reducedAccuracy
+        @unknown default: return .denied
+        }
+    }
 
     func updates() -> AsyncStream<LocationSample> {
         continuation?.finish()
