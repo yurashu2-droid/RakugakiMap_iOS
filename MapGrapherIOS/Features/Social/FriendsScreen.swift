@@ -6,6 +6,7 @@ struct FriendsScreen: View {
     @StateObject private var model: FriendsScreenModel
     @State private var uniqueID = ""
     @State private var friendToRemove: FriendRelation?
+    @State private var showsRemoveConfirmation = false
 
     init(service: any SocialProfileUIService = FakeSocialProfileUIService()) {
         self.service = service
@@ -57,9 +58,10 @@ struct FriendsScreen: View {
             }
             .confirmationDialog(
                 AppStrings.socialFriendsRemoveConfirm,
-                item: $friendToRemove
-            ) { friend in
+                isPresented: $showsRemoveConfirmation
+            ) {
                 Button(AppStrings.socialFriendsRemove, role: .destructive) {
+                    guard let friend = friendToRemove else { return }
                     Task { await model.remove(friend: friend) }
                 }
                 Button("posting.close.cancel", role: .cancel) {}
@@ -113,6 +115,7 @@ struct FriendsScreen: View {
                     Spacer(minLength: AppSpacing.small)
                     Button {
                         friendToRemove = friend
+                        showsRemoveConfirmation = true
                     } label: {
                         Image(systemName: "person.badge.minus")
                     }

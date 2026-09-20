@@ -11,6 +11,7 @@ final class AppContainer {
     let mapLocationProvider: MapLocationAdapter
     let arRepository: ARRepository
     let groupsService: SupabaseGroupsService
+    let safetyRepository: SafetyRepository
     private var postingServices: [UUID: LazyPostingUIService] = [:]
     private var socialServices: [UUID: SupabaseSocialProfileService] = [:]
     private var photoDetailServices: [UUID: SupabasePhotoDetailService] = [:]
@@ -25,6 +26,8 @@ final class AppContainer {
                                                session: createdSession)
         let createdGroupsService = SupabaseGroupsService(gateway: gateway,
                                                          session: createdSession)
+        let createdSafetyRepository = SafetyRepository(remote: gateway, session: createdSession,
+            invalidateAssets: { context in await createdLoader.invalidate(context: context) })
         self.gateway = gateway
         session = createdSession
         assetResolver = createdResolver
@@ -33,6 +36,7 @@ final class AppContainer {
         mapLocationProvider = createdMapLocationProvider
         arRepository = createdARRepository
         groupsService = createdGroupsService
+        safetyRepository = createdSafetyRepository
         createdSession.onInvalidation = { [weak createdLoader, weak self] context in
             await createdLoader?.invalidate(context: context)
             self?.postingServices.removeValue(forKey: context.epoch)

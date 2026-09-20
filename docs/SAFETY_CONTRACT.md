@@ -1,6 +1,6 @@
 # 通報・ブロック・退会の契約案
 
-状態: 提案。現行のSupabase migrationには下記APIがなく、iOS側で呼び出してはならない。実装前にバックエンド共有台帳と追加migrationへ反映し、RLS回帰テストを通す。
+状態: B02の通報・ブロックRPCはmigrationとROLLBACK回帰で検証済みだが、検証用Supabaseへ未適用。退会workerも未実装。iOS側の公開画面からはまだ呼び出さない。正確な署名はバックエンドの`docs/shared_interface_registry.md`を基準にする。
 
 ## 利用者に見える動作
 
@@ -16,10 +16,10 @@
 | 入口 | 入力 | 成功応答 | 権限・失敗 |
 |---|---|---|---|
 | `report_content` | `client_request_id`, `target_kind` (`PHOTO`/`RAKUGAKI`/`USER`), `target_id`, `reason` (`HARASSMENT`/`SEXUAL`/`VIOLENCE`/`PRIVACY`/`SPAM`/`OTHER`), `detail`（任意、最大500字） | `report_id`, `received_at`, `status=RECEIVED` | ログイン必須。存在しない対象は`NOT_FOUND`。自分への通報は`INVALID_TARGET`。同一request IDと異なる内容は`REQUEST_CONFLICT`。 |
-| `block_user` | `target_user_id` | `target_user_id`, `blocked_at` | 本人・未存在を拒否。再送は同じ状態。 |
-| `unblock_user` | `target_user_id` | `target_user_id`, `unblocked=true` | 本人だけ解除。再送可能。 |
-| `list_blocked_users` | なし | `target_user_id`, 表示可能なプロフィール識別子の配列 | 本人のブロックだけ返す。 |
-| `request_account_deletion` | `client_request_id` | `request_id`, `status=ACCEPTED`, `requested_at` | 再認証済みセッションを要求。二重依頼は既存requestを返す。受付は完了ではない。 |
+| `block_user` | `target_user_id` | `blocked_user_id`, `blocked_at` | 本人・未存在を拒否。再送は同じ状態。 |
+| `unblock_user` | `target_user_id` | `unblocked_user_id`, `unblocked=true` | 本人だけ解除。再送可能。 |
+| `list_blocked_users` | なし | `target_user_id`, `user_unique_id`, `display_name`, `blocked_at`の配列 | 本人のブロックだけ返す。 |
+| `internal_accept_account_deletion` | `target_user_id`, `client_request_id` | `request_id`, `status=ACCEPTED`, `requested_at` | `service_role`専用のDB土台。再認証付き入口とworkerが未実装のため、アプリからは呼べない。 |
 | `account_deletion_status` | なし | `request_id`, `status` (`ACCEPTED`/`PROCESSING`/`FAILED`/`COMPLETED`) | 本人の進捗だけ返す。Auth削除後の照会はできないため、完了は実行関数の応答と端末側セッション破棄で扱う。 |
 
 退会の特権処理はサーバー側でのみ実行し、アプリへ`service_role`を渡さない。工程は、退会要求の固定と新規書込停止→グループowner移譲→削除manifest確定→対象Storage pathの削除→Auth user削除（FK cascade）→完了記録。書込停止は旧RPC、直接REST、Storage upload、招待・グループ操作にも適用する。manifestはDBのpathだけを信用せず、Storage実体の所有者と正規pathを検証する。本人写真に他人が描いた画像も含め、他の存続投稿から参照される画像を誤削除しない。途中失敗はlease付きの工程記録を保持して再実行し、別人のファイルや行を削除しない。工程記録は退会者のAuth/プロフィールからCASCADEされない管理領域に保持する。Auth削除後の応答消失を「成功」と推測せず、同じ要求の最終状態を管理側で照合する。
