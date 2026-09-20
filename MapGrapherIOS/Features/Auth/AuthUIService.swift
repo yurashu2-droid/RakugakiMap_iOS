@@ -4,6 +4,8 @@ import Foundation
 @MainActor
 protocol AuthUIService {
     func signIn(email: String, password: String) async throws -> AuthUIOutcome
+    func signInWithGoogle() async throws -> AuthUIOutcome
+    func signInWithApple(idToken: String, nonce: String) async throws -> AuthUIOutcome
     func signUp(email: String, password: String, displayName: String) async throws -> AuthUIOutcome
     func sendPasswordReset(email: String) async throws
 }
@@ -43,6 +45,12 @@ final class FakeAuthUIService: AuthUIService {
     }
 
     func signIn(email: String, password: String) async throws -> AuthUIOutcome {
+        try signInResult.get()
+    }
+
+    func signInWithGoogle() async throws -> AuthUIOutcome { try signInResult.get() }
+
+    func signInWithApple(idToken: String, nonce: String) async throws -> AuthUIOutcome {
         try signInResult.get()
     }
 

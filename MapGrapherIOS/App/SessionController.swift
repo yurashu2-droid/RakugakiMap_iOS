@@ -13,6 +13,8 @@ protocol AuthSessionServicing: AnyObject {
     var events: AsyncStream<AuthSessionState> { get }
     func restore() async -> AuthSessionState
     func signIn(email: String, password: String) async throws -> UUID
+    func signInWithGoogle() async throws -> UUID
+    func signInWithApple(idToken: String, nonce: String) async throws -> UUID
     func signUp(email: String, password: String, displayName: String) async throws -> UUID?
     func signOut() async throws
     func requestPasswordReset(email: String) async throws
@@ -59,6 +61,22 @@ final class SessionController: SessionProviding {
         acceptsEvents = true
         let revision = generation
         let userID = try await auth.signIn(email: email, password: password)
+        guard revision == generation else { return }
+        await receive(.authenticated(userID))
+    }
+
+    func signInWithGoogle() async throws {
+        acceptsEvents = true
+        let revision = generation
+        let userID = try await auth.signInWithGoogle()
+        guard revision == generation else { return }
+        await receive(.authenticated(userID))
+    }
+
+    func signInWithApple(idToken: String, nonce: String) async throws {
+        acceptsEvents = true
+        let revision = generation
+        let userID = try await auth.signInWithApple(idToken: idToken, nonce: nonce)
         guard revision == generation else { return }
         await receive(.authenticated(userID))
     }

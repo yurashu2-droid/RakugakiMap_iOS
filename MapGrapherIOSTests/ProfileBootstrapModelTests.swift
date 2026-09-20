@@ -40,6 +40,8 @@ private final class BootstrapAuthService: AuthSessionServicing {
     let events = AsyncStream<AuthSessionState> { _ in }
     func restore() async -> AuthSessionState { .authenticated(user) }
     func signIn(email: String, password: String) async throws -> UUID { user }
+    func signInWithGoogle() async throws -> UUID { user }
+    func signInWithApple(idToken: String, nonce: String) async throws -> UUID { user }
     func signUp(email: String, password: String, displayName: String) async throws -> UUID? { user }
     func signOut() async throws { }
     func requestPasswordReset(email: String) async throws { }

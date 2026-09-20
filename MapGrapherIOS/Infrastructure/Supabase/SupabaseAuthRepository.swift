@@ -1,9 +1,12 @@
 import Foundation
 import Supabase
+import AuthenticationServices
+import UIKit
 
 @MainActor
 final class SupabaseAuthRepository: AuthSessionServicing {
     private let client: SupabaseClient
+    private let webAuthentication = WebAuthenticationSession()
 
     init(client: SupabaseClient) { self.client = client }
 
@@ -43,6 +46,22 @@ final class SupabaseAuthRepository: AuthSessionServicing {
         try await client.auth.signIn(email: email, password: password).user.id
     }
 
+    func signInWithGoogle() async throws -> UUID {
+        let redirect = URL(string: "rakugakimap-dev://auth/callback")!
+        let url = try await client.auth.getOAuthSignInURL(provider: .google, redirectTo: redirect)
+        let callback = try await webAuthentication.authenticate(url: url, callbackScheme: redirect.scheme!)
+        guard AuthLinkHandler(redirectURL: redirect).flow(for: callback) == .code else {
+            throw AuthWebError.invalidCallback
+        }
+        return try await client.auth.session(from: callback).user.id
+    }
+
+    func signInWithApple(idToken: String, nonce: String) async throws -> UUID {
+        guard !idToken.isEmpty, !nonce.isEmpty else { throw AuthWebError.invalidCallback }
+        return try await client.auth.signInWithIdToken(credentials:
+            OpenIDConnectCredentials(provider: .apple, idToken: idToken, nonce: nonce)).user.id
+    }
+
     func signUp(email: String, password: String, displayName: String) async throws -> UUID? {
         let response = try await client.auth.signUp(email: email, password: password,
                                                      data: ["display_name": .string(displayName)],
@@ -59,5 +78,35 @@ final class SupabaseAuthRepository: AuthSessionServicing {
 
     func completeAuthURL(_ url: URL) async throws -> UUID {
         try await client.auth.session(from: url).user.id
+    }
+}
+
+private enum AuthWebError: Error { case invalidCallback, couldNotStart }
+
+@MainActor
+private final class WebAuthenticationSession: NSObject, ASWebAuthenticationPresentationContextProviding {
+    private var activeSession: ASWebAuthenticationSession?
+
+    func authenticate(url: URL, callbackScheme: String) async throws -> URL {
+        try await withCheckedThrowingContinuation { continuation in
+            let session = ASWebAuthenticationSession(url: url, callbackURLScheme: callbackScheme) {
+                callback, error in
+                if let error { continuation.resume(throwing: error) }
+                else if let callback { continuation.resume(returning: callback) }
+                else { continuation.resume(throwing: AuthWebError.invalidCallback) }
+            }
+            session.presentationContextProvider = self
+            session.prefersEphemeralWebBrowserSession = false
+            activeSession = session
+            if !session.start() {
+                activeSession = nil
+                continuation.resume(throwing: AuthWebError.couldNotStart)
+            }
+        }
+    }
+
+    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows).first(where: \.isKeyWindow) ?? ASPresentationAnchor()
     }
 }

@@ -118,6 +118,8 @@ private final class FakeAuthService: AuthSessionServicing {
 
     func restore() async -> AuthSessionState { snapshot }
     func signIn(email: String, password: String) async throws -> UUID { nextSignInID }
+    func signInWithGoogle() async throws -> UUID { nextSignInID }
+    func signInWithApple(idToken: String, nonce: String) async throws -> UUID { nextSignInID }
     func signUp(email: String, password: String, displayName: String) async throws -> UUID? { nil }
     func signOut() async throws {
         if signOutFailure { throw AppFailure.offline }

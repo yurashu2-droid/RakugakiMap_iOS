@@ -17,6 +17,20 @@ final class SessionAuthUIAdapter: AuthUIService {
         }
     }
 
+    func signInWithGoogle() async throws -> AuthUIOutcome {
+        do {
+            try await session.signInWithGoogle()
+            return .signedIn
+        } catch { throw map(error) }
+    }
+
+    func signInWithApple(idToken: String, nonce: String) async throws -> AuthUIOutcome {
+        do {
+            try await session.signInWithApple(idToken: idToken, nonce: nonce)
+            return .signedIn
+        } catch { throw map(error) }
+    }
+
     func signUp(email: String, password: String, displayName: String) async throws -> AuthUIOutcome {
         do {
             try await session.signUp(email: email, password: password, displayName: displayName)
