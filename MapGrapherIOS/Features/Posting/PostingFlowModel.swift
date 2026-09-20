@@ -9,6 +9,7 @@ import UniformTypeIdentifiers
 @MainActor
 protocol PostingUIService {
     var storesDraftsPersistently: Bool { get }
+    var performsNetworkSubmission: Bool { get }
     func prepareImage(data: Data, suggestedFilename: String) async throws -> PreparedPostingImage
     func currentLocation() async -> GeoPoint?
     func saveDraft(_ draft: PostingDraft) async throws
@@ -17,6 +18,7 @@ protocol PostingUIService {
 
 extension PostingUIService {
     var storesDraftsPersistently: Bool { false }
+    var performsNetworkSubmission: Bool { false }
 }
 
 enum PostingServiceError: Error, Equatable, Sendable {
@@ -135,11 +137,12 @@ final class PostingFlowModel: ObservableObject {
     }
 
     var hasUnsavedDraft: Bool {
-        if step == .status, status?.state == .completed { return false }
+        if step == .status, status != nil, service.performsNetworkSubmission { return false }
         return draft.preparedImage != nil || !draft.title.isEmpty || draft.drawing != nil
     }
 
     var storesDraftsPersistently: Bool { service.storesDraftsPersistently }
+    var performsNetworkSubmission: Bool { service.performsNetworkSubmission }
 
     func loadLocation() async {
         guard draft.location == nil else { return }

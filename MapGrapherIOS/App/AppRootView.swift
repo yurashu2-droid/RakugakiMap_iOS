@@ -55,11 +55,16 @@ private struct SessionRootView: View {
         case .restoring:
             ProgressView("ログイン状態を確認しています")
         case .authenticated:
-            RootTabs(photoReader: container.photoReader,
-                     locationProvider: container.mapLocationProvider,
-                     assetLoader: container.assetLoader,
-                     sessionContext: session.context)
-                .id(session.context?.epoch)
+            if let context = session.context {
+                RootTabs(photoReader: container.photoReader,
+                         locationProvider: container.mapLocationProvider,
+                         assetLoader: container.assetLoader,
+                         sessionContext: context,
+                         postingService: container.postingService(for: context))
+                    .id(context.epoch)
+            } else {
+                ProgressView("ログイン状態を確認しています")
+            }
         case .signedOut, .awaitingEmailConfirmation, .reauthenticationRequired:
             WelcomeScreen(service: SessionAuthUIAdapter(session: session))
         }

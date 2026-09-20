@@ -101,7 +101,7 @@ struct SubmissionStatusScreen: View {
 
     private var canRetry: Bool {
         if isPrototype { return false }
-        switch result?.state {
+        return switch result?.state {
         case .some(.queued), .some(.retryWaiting), .some(.needsLogin), .some(.needsCorrection),
              .some(.outcomeUnknown), .some(.cancelled):
             true
@@ -151,7 +151,7 @@ struct SubmissionStatusScreen: View {
 
     private var detailKey: LocalizedStringKey {
         if isPrototype { return "posting.status.prototype.detail" }
-        switch result?.state {
+        return switch result?.state {
         case .some(.completed):
             "posting.status.success.detail"
         case .some(.retryWaiting), .some(.outcomeUnknown):

@@ -1,0 +1,69 @@
+import Foundation
+import MapGrapherCore
+
+/// 認証済み画面でだけ永続キューを開く。初期化失敗時は下書きを消さず再試行する。
+@MainActor
+final class LazyPostingUIService: PostingUIService {
+    let storesDraftsPersistently = false
+    let performsNetworkSubmission = true
+
+    private let context: SessionContext
+    private let gateway: SupabaseGateway
+    private let session: any SessionProviding
+    private var initializing: Task<RealPostingUIService, Error>?
+
+    init(context: SessionContext, gateway: SupabaseGateway, session: any SessionProviding) {
+        self.context = context
+        self.gateway = gateway
+        self.session = session
+    }
+
+    func prepareImage(data: Data, suggestedFilename: String) async throws -> PreparedPostingImage {
+        try await service().prepareImage(data: data, suggestedFilename: suggestedFilename)
+    }
+
+    func currentLocation() async -> GeoPoint? {
+        guard let service = try? await service() else { return nil }
+        return await service.currentLocation()
+    }
+
+    func saveDraft(_ draft: PostingDraft) async throws {
+        try await service().saveDraft(draft)
+    }
+
+    func submit(_ draft: PostingDraft) async throws -> PostingSubmissionResult {
+        try await service().submit(draft)
+    }
+
+    private func service() async throws -> RealPostingUIService {
+        if initializing == nil {
+            let context = context
+            let gateway = gateway
+            let session = session
+            initializing = Task { @MainActor in
+                guard await session.isCurrent(context) else { throw AppFailure.needsLogin }
+                let store = try await CoreDataSubmissionStore()
+                guard await session.isCurrent(context) else { throw AppFailure.needsLogin }
+                let files = try DraftFileStore()
+                let transport = SupabaseSubmissionTransport(gateway: gateway, session: session,
+                                                            files: files)
+                let coordinator = SubmissionCoordinator(store: store, session: session,
+                                                        transport: transport)
+                let temporary = FileManager.default.temporaryDirectory
+                return RealPostingUIService(
+                    context: context, session: session, store: store,
+                    coordinator: coordinator, files: files,
+                    imagePreparer: ImagePreparer(outputDirectory: temporary.appendingPathComponent("Prepared")),
+                    drawingExporter: DrawingExporter(outputDirectory: temporary.appendingPathComponent("Drawings")),
+                    location: MapLocationAdapter()
+                )
+            }
+        }
+        do {
+            return try await initializing!.value
+        } catch {
+            initializing = nil
+            throw error
+        }
+    }
+}

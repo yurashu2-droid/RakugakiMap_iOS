@@ -7,6 +7,7 @@ import MapGrapherCore
 final class RealPostingUIService: PostingUIService {
     // 編集可能な下書きを画面へ復元する導線は未接続。保存と再送キューは永続化する。
     let storesDraftsPersistently = false
+    let performsNetworkSubmission = true
 
     private let fixedContext: SessionContext
     private let session: any SessionProviding

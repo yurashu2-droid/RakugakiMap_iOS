@@ -147,7 +147,7 @@ struct PostingFlowScreen: View {
                 result: model.status,
                 error: model.error,
                 isBusy: model.isBusy,
-                isPrototype: !model.storesDraftsPersistently,
+                isPrototype: !model.performsNetworkSubmission,
                 waitingForApproval: model.draft.reserveAR && model.draft.requiresApproval,
                 onRetry: {
                     Task { await model.retrySubmission() }
