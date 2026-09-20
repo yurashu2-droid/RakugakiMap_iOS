@@ -12,10 +12,30 @@ settings:
 packages:
   MapGrapherCore:
     path: Packages/MapGrapherCore
+  Supabase:
+    url: https://github.com/supabase/supabase-swift.git
+    exactVersion: 2.55.2
 targets:
   MapGrapherIOS:
     type: application
     platform: iOS
+    info:
+      path: MapGrapherIOS/Resources/Info.plist
+      properties:
+        CFBundleDisplayName: RakugakiMap
+        NSCameraUsageDescription: 現地でラクガキをAR表示するためにカメラを使います。
+        NSLocationWhenInUseUsageDescription: 近くの写真と現地のAR作品を探すために位置情報を使います。
+        NSPhotoLibraryUsageDescription: 投稿に使う写真を選ぶために写真ライブラリを使います。
+        NSPhotoLibraryAddUsageDescription: 共有メニューで選んだAR写真を写真ライブラリに保存します。
+        SUPABASE_URL: $(SUPABASE_URL)
+        SUPABASE_PUBLISHABLE_KEY: $(SUPABASE_PUBLISHABLE_KEY)
+        CFBundleURLTypes:
+          - CFBundleURLName: com.rakugakimap.auth
+            CFBundleURLSchemes:
+              - rakugakimap-dev
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
     configFiles:
       Debug: MapGrapherIOS/Configuration/Base.xcconfig
       Release: MapGrapherIOS/Configuration/Base.xcconfig
@@ -23,16 +43,13 @@ targets:
       - path: MapGrapherIOS
     settings:
       base:
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_CFBundleDisplayName: RakugakiMap
-        INFOPLIST_KEY_NSCameraUsageDescription: 現地でラクガキをAR表示するためにカメラを使います。
-        INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription: 共有メニューで選んだAR写真を写真ライブラリに保存します。
-        INFOPLIST_KEY_UILaunchScreen_Generation: YES
-        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        GENERATE_INFOPLIST_FILE: NO
         CURRENT_PROJECT_VERSION: 1
         MARKETING_VERSION: 0.1.0
     dependencies:
       - package: MapGrapherCore
+      - package: Supabase
+        product: Supabase
   MapGrapherIOSTests:
     type: bundle.unit-test
     platform: iOS

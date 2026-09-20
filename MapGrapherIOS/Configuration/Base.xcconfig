@@ -1,4 +1,6 @@
 // 手元の署名設定は任意。CIは署名なしで検証する。
 PRODUCT_BUNDLE_IDENTIFIER = com.rakugakimap.ios.development
 DEVELOPMENT_TEAM =
+SUPABASE_URL =
+SUPABASE_PUBLISHABLE_KEY =
 #include? "Local.xcconfig"

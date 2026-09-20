@@ -2,3 +2,5 @@
 // Team ID、証明書、秘密鍵を追跡ファイルへ追加しない。
 DEVELOPMENT_TEAM =
 PRODUCT_BUNDLE_IDENTIFIER = com.example.rakugakimap.development
+SUPABASE_URL = https:/$()/example.supabase.co
+SUPABASE_PUBLISHABLE_KEY = replace-with-publishable-key

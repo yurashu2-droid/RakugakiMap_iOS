@@ -8,7 +8,15 @@ struct MapGrapherApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootTabView(isUITesting: isUITesting)
+            if isUITesting {
+                if ProcessInfo.processInfo.arguments.contains("--auth-ui-testing") {
+                    WelcomeScreen(service: FakeAuthUIService())
+                } else {
+                    RootTabs(isUITesting: true)
+                }
+            } else {
+                AppRootView()
+            }
         }
     }
 }
