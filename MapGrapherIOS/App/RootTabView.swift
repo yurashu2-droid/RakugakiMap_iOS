@@ -19,7 +19,6 @@ struct RootTabView: View {
                 .tabItem {
                     Label(AppStrings.map, systemImage: "map.fill")
                         .accessibilityLabel(Text(AppStrings.map))
-                        .accessibilityIdentifier("tab.map")
                 }
 
             GroupsPrototypeScreen()
@@ -27,7 +26,6 @@ struct RootTabView: View {
                 .tabItem {
                     Label(AppStrings.groups, systemImage: "person.2.fill")
                         .accessibilityLabel(Text(AppStrings.groups))
-                        .accessibilityIdentifier("tab.groups")
                 }
 
             NotificationsPrototypeScreen()
@@ -35,7 +33,6 @@ struct RootTabView: View {
                 .tabItem {
                     Label(AppStrings.notifications, systemImage: "bell.fill")
                         .accessibilityLabel(Text(AppStrings.notifications))
-                        .accessibilityIdentifier("tab.notifications")
                 }
 
             ProfilePrototypeScreen()
@@ -43,7 +40,6 @@ struct RootTabView: View {
                 .tabItem {
                     Label(AppStrings.profile, systemImage: "person.crop.circle.fill")
                         .accessibilityLabel(Text(AppStrings.profile))
-                        .accessibilityIdentifier("tab.profile")
                 }
         }
         .tint(AppColors.coral)
