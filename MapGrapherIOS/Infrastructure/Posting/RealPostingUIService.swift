@@ -150,7 +150,7 @@ final class RealPostingUIService: PostingUIService {
             title: draft.title, point: point, privacy: draft.visibility,
             drawPermission: draft.drawPermission, requiresApproval: draft.requiresApproval,
             mimeType: image.mimeType, byteSize: image.byteSize, sha256: image.sha256))
-        let photoData = try JSONEncoder().encode(photoPayload)
+        let photoData = try Self.encodeStable(photoPayload)
         if let previous = savedPayloads[draft.id], previous != photoData {
             throw PostingServiceError.invalidDraft
         }
@@ -182,7 +182,7 @@ final class RealPostingUIService: PostingUIService {
                 mimeType: exported.mimeType, byteSize: exported.byteSize, sha256: exported.sha256))
             guard let asset = AssetReference(bucket: "rakugakis", path: path),
                   let row = PendingSubmission(id: drawingID, ownerID: owner, schemaVersion: 1,
-                    kind: .rakugaki, payloadData: try JSONEncoder().encode(payload),
+                    kind: .rakugaki, payloadData: try Self.encodeStable(payload),
                     localFilePaths: [file.path], assetPaths: [asset], dependsOn: draft.id,
                     remoteID: nil, state: .draft, resumeStage: .upload, attemptCount: 0,
                     nextAttemptAt: nil, lastFailure: nil, leaseOwner: nil, leaseExpiresAt: nil,
@@ -315,5 +315,11 @@ final class RealPostingUIService: PostingUIService {
 
     private static func digest(_ data: Data) -> String {
         SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+    }
+
+    private static func encodeStable<Value: Encodable>(_ value: Value) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
+        return try encoder.encode(value)
     }
 }

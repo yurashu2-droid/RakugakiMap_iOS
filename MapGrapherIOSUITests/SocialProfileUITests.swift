@@ -71,6 +71,9 @@ final class SocialProfileUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["social.notice.fake"].waitForExistence(timeout: 5))
 
         app.navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(screen(UI.historyScreen, in: app).waitForExistence(timeout: 5))
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(screen(UI.profileScreen, in: app).waitForExistence(timeout: 5))
         app.buttons["profile.albums"].tap()
         XCTAssertTrue(screen(UI.albumsScreen, in: app).waitForExistence(timeout: 5))
         app.buttons["album.create"].tap()

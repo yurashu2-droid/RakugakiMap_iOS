@@ -78,7 +78,6 @@ struct FriendRequestScreen: View {
                     RoundedRectangle(cornerRadius: 16)
                         .stroke(AppColors.ink.opacity(0.12), lineWidth: 1)
                 }
-                .accessibilityIdentifier("friend-request.row.\(request.id.uuidString)")
             }
         }
     }

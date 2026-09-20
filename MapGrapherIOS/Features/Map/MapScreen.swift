@@ -14,6 +14,7 @@ struct MapScreen: View {
     @StateObject private var model: MapScreenModel
     @State private var sheetRoute: MapSheetRoute?
     @State private var selectedPhoto: Photo?
+    @State private var pendingDetailPhoto: Photo?
 
     init(
         isUITesting: Bool = false,
@@ -99,7 +100,13 @@ struct MapScreen: View {
             .onDisappear {
                 model.cancelPendingSearch()
             }
-            .sheet(item: $sheetRoute) { route in
+            .sheet(item: $sheetRoute, onDismiss: {
+                if let photo = pendingDetailPhoto {
+                    pendingDetailPhoto = nil
+                    selectedPhoto = photo
+                    sheetRoute = .detail
+                }
+            }) { route in
                 sheetView(for: route)
             }
         }
@@ -226,8 +233,13 @@ struct MapScreen: View {
     }
 
     private func presentDetail(for photo: Photo) {
-        selectedPhoto = photo
-        sheetRoute = .detail
+        if sheetRoute == .list {
+            pendingDetailPhoto = photo
+            sheetRoute = nil
+        } else {
+            selectedPhoto = photo
+            sheetRoute = .detail
+        }
     }
 
     private func search(center: GeoPoint) {

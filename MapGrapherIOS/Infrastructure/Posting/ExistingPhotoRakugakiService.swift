@@ -145,7 +145,9 @@ final class ExistingPhotoRakugakiService: ExistingPhotoRakugakiServing {
             throw AppFailure.validation("描画の対象写真または内容が不正です")
         }
         try await requireDrawPermission(photoID: photo.id)
-        let documentHash = Self.digest(try JSONEncoder().encode(document))
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
+        let documentHash = Self.digest(try encoder.encode(document))
         if let saved = savedDocuments[operationID], saved != documentHash {
             throw AppFailure.validation("同じ投稿IDの描画内容が変わりました")
         }
