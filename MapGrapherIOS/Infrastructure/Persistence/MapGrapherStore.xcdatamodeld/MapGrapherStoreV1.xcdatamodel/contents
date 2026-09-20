@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="MapGrapherStoreV1">
-    <entity name="SubmissionRecord" representedClassName="NSManagedObject" syncable="YES" codeGenerationType="manual/none">
+    <entity name="SubmissionRecord" representedClassName="NSManagedObject" syncable="YES">
         <attribute name="createdAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="id" optional="NO" attributeType="String"/>
         <attribute name="leaseExpiresAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
