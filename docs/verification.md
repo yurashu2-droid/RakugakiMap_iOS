@@ -68,4 +68,4 @@
 - 写真詳細で既存の`history_rakugakis` RPCから承認済みラクガキを取得し、private `rakugakis` bucketのStorage pathをsigned URLで読み込む。写真と透明PNGを同じ画像座標で重ねる。未承認・別写真の行は表示しない。
 - 画像や履歴の取得に失敗した場合は「ラクガキなし」と区別し、再読込を出す。追加ラクガキ画面から戻った時と画面の引き下げ操作で再取得する。
 - Androidのピン画像は458×710px。iOSの60×70ptへの引き伸ばしをやめ、60×93ptで比率を保つ。円窓と座標を指す先端の位置も調整する。
-- CIのビルド・unit/UIテストとiPhone実機での合成位置・ピン外観は未確認。
+- [run 35542114167](https://github.com/yurashu2-droid/RakugakiMap_iOS/actions/runs/35542114167)でCore、署名なしiOSビルド、unit/UIテスト、IPA生成の全ジョブ成功。新規の透明PNG合成テストと承認済み履歴のStorage pathテストも通過。IPAのcommit.txtは`3006a77`と一致し、SHA-256を照合した。iPhone実機での合成位置・ピン外観は未確認。
