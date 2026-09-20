@@ -1,0 +1,46 @@
+name: iOS verification
+
+on:
+  push:
+    paths:
+      - 'Packages/**'
+      - 'MapGrapherIOS/**'
+      - 'MapGrapherIOSTests/**'
+      - 'MapGrapherIOSUITests/**'
+      - 'project.yml'
+      - 'scripts/**'
+      - '.github/workflows/ios.yml'
+  pull_request:
+    paths:
+      - 'Packages/**'
+      - 'MapGrapherIOS/**'
+      - 'MapGrapherIOSTests/**'
+      - 'MapGrapherIOSUITests/**'
+      - 'project.yml'
+      - 'scripts/**'
+      - '.github/workflows/ios.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core:
+    runs-on: macos-15
+    timeout-minutes: 15
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+      - name: Core tests
+        run: swift test --package-path Packages/MapGrapherCore
