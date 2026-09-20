@@ -30,7 +30,10 @@ enum ARImagePlaneFactory {
         var material = UnlitMaterial()
         material.color = .init(tint: .white, texture: .init(texture))
         material.blending = .transparent(opacity: .init(floatLiteral: 1))
-        material.faceCulling = .none
+        // iOS 17は既定の表面表示を使い、18以降は裏側からも確認できる。
+        if #available(iOS 18.0, *) {
+            material.faceCulling = .none
+        }
         return ModelEntity(mesh: mesh, materials: [material])
     }
 
