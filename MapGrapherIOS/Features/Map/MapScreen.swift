@@ -14,8 +14,6 @@ struct MapScreen: View {
     @StateObject private var model: MapScreenModel
     @State private var sheetRoute: MapSheetRoute?
     @State private var selectedPhoto: Photo?
-    @State private var listSelectedPhoto: Photo?
-    @State private var showsListDetail = false
 
     init(
         isUITesting: Bool = false,
@@ -208,18 +206,8 @@ struct MapScreen: View {
             PhotoListScreen(
                 photos: model.visiblePhotos,
                 filter: model.selectedFilter,
-                onSelect: { photo in
-                    listSelectedPhoto = photo
-                    showsListDetail = true
-                }
+                detail: { photo in detail(for: photo) }
             )
-            .sheet(isPresented: $showsListDetail, onDismiss: {
-                listSelectedPhoto = nil
-            }) {
-                if let listSelectedPhoto {
-                    detail(for: listSelectedPhoto)
-                }
-            }
         case .detail:
             if let selectedPhoto {
                 detail(for: selectedPhoto)

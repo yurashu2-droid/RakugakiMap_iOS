@@ -2,10 +2,10 @@ import SwiftUI
 import MapGrapherCore
 
 @MainActor
-struct PhotoListScreen: View {
+struct PhotoListScreen<Detail: View>: View {
     let photos: [Photo]
     let filter: PhotoFilter
-    let onSelect: (Photo) -> Void
+    let detail: (Photo) -> Detail
 
     @Environment(\.dismiss) private var dismiss
 
@@ -21,12 +21,11 @@ struct PhotoListScreen: View {
                     }
                 } else {
                     List(photos, id: \.id) { photo in
-                        Button {
-                            onSelect(photo)
+                        NavigationLink {
+                            detail(photo)
                         } label: {
                             PhotoListRow(photo: photo)
                         }
-                        .buttonStyle(.plain)
                         .accessibilityIdentifier("map.photo-row.\(photo.id.uuidString)")
                     }
                     .listStyle(.plain)
