@@ -95,7 +95,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
   ipa:
-    needs: [core, ios]
+    needs: [core]
     runs-on: macos-15
     timeout-minutes: 20
     env:

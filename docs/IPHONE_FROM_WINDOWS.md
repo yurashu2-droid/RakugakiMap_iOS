@@ -5,7 +5,7 @@
 ## IPAの取得
 
 1. GitHubのActionsで対象commitの`iOS verification`を開く。
-2. Core・iOSテスト・IPA作成が成功したrunのArtifactsから`RakugakiMap-unsigned-ipa`をダウンロードする。
+2. Core・IPA作成が成功したrunのArtifactsから`RakugakiMap-unsigned-ipa`をダウンロードする。iOSテストの結果も同じrunで確認する。
 3. ZIPを展開し、`RakugakiMap-unsigned.ipa`をiLoaderのIPA読み込みで選ぶ。
 4. いつものiLoaderの手順で署名・インストールし、iPhoneで起動する。
 5. 「地図」→「AR動作確認」から[AR_PROBE](AR_PROBE.md)の項目を実機で確認する。
@@ -18,7 +18,7 @@ IPAは実機向けRelease archiveの`Payload/MapGrapherIOS.app`を梱包した�
 Get-FileHash .\RakugakiMap-unsigned.ipa -Algorithm SHA256
 ```
 
-Artifactsの保存期間は14日。期限切れならActionsを手動再実行する。IPA作成はCoreとiOSの検証成功後だけ実行される。
+Artifactsの保存期間は14日。期限切れならActionsを手動再実行する。IPA作成はCoreテスト成功後に実行され、iOSテストとは独立している。画面テストが失敗したIPAは原因調査用として扱う。
 初期版はバックエンド未接続の試作。IPA生成成功と、iLoaderでの導入・AR実機成功は別々に記録する。
 
 ## 将来のTestFlight / App Store
