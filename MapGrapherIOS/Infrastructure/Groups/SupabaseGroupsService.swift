@@ -45,7 +45,7 @@ final class SupabaseGroupsService: GroupsServing {
     func members(groupID: UUID, context: SessionContext) async throws -> [GroupMember] {
         let rows: [GroupMemberDTO] = try await call("get_group_members",
             parameters: GroupIDRequestDTO(targetGroupId: groupID), context: context)
-        return try rows.map(GroupMapper.member)
+        return try rows.compactMap(GroupMapper.member)
     }
 
     func invite(groupID: UUID, userUniqueID: String,
@@ -132,7 +132,7 @@ final class SupabaseGroupsService: GroupsServing {
         guard rows.allSatisfy({ $0.groupId == groupID }) else {
             throw AppFailure.validation("お題状態のグループが一致しません")
         }
-        return try rows.map(GroupMapper.participant)
+        return try rows.compactMap(GroupMapper.participant)
     }
 
     func submitAnswer(missionID: UUID, photoID: UUID,

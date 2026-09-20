@@ -26,7 +26,7 @@ struct GroupSummary: Sendable {
     let id: UUID
     let name: String
     let description: String
-    let ownerID: UUID
+    let ownerID: UUID?
     let isOwner: Bool
     let memberCount: Int64
     let missionID: UUID?
@@ -145,8 +145,8 @@ enum GroupMapper {
         if let date = row.missionDate { try validateMissionDate(date) }
         guard row.memberCount >= 0, row.answeredCount >= 0,
               row.participantCount >= 0 else { throw AppFailure.validation("グループ集計が不正です") }
-        return GroupSummary(id: row.groupId, name: row.groupName,
-            description: row.groupDescription, ownerID: row.ownerId,
+        return GroupSummary(id: row.groupId, name: row.groupName ?? "ブロック中のグループ",
+            description: row.groupDescription ?? "", ownerID: row.ownerId,
             isOwner: row.isOwner, memberCount: row.memberCount,
             missionID: row.missionId, missionDate: row.missionDate,
             missionStatus: status, promptText: row.promptText,
@@ -155,14 +155,21 @@ enum GroupMapper {
             hasAnswered: row.hasAnswered)
     }
 
-    static func member(_ row: GroupMemberDTO) throws -> GroupMember {
+    static func member(_ row: GroupMemberDTO) throws -> GroupMember? {
+        if row.memberId == nil && row.displayName == nil && row.userUniqueId == nil {
+            return nil
+        }
+        guard let id = row.memberId, let name = row.displayName,
+              let uniqueID = row.userUniqueId else {
+            throw AppFailure.validation("グループ参加者の情報が不正です")
+        }
         guard let role = GroupRole(rawValue: row.role),
               let status = GroupMemberStatus(rawValue: row.status),
               (0...7).contains(row.rotationOrder) else {
             throw AppFailure.validation("グループ参加状態が不正です")
         }
-        return GroupMember(id: row.memberId, displayName: row.displayName,
-            userUniqueID: row.userUniqueId,
+        return GroupMember(id: id, displayName: name,
+            userUniqueID: uniqueID,
             avatar: try asset(bucket: "avatars", path: row.avatarPath),
             role: role, status: status, rotationOrder: row.rotationOrder,
             joinedAt: row.joinedAt, answeredToday: row.answeredToday,
@@ -196,7 +203,11 @@ enum GroupMapper {
             createdAt: row.createdAt, updatedAt: row.updatedAt)
     }
 
-    static func participant(_ row: GroupMissionParticipantDTO) throws -> GroupMissionParticipant {
+    static func participant(_ row: GroupMissionParticipantDTO) throws -> GroupMissionParticipant? {
+        if row.participantId == nil && row.participantName == nil { return nil }
+        guard let id = row.participantId, let name = row.participantName else {
+            throw AppFailure.validation("お題の参加者情報が不正です")
+        }
         try validateMissionDate(row.missionDate)
         guard (0...7).contains(row.rotationOrderSnapshot) else {
             throw AppFailure.validation("お題の参加順が不正です")
@@ -205,7 +216,7 @@ enum GroupMapper {
             missionDate: row.missionDate,
             missionStatus: try missionStatus(row.missionStatus),
             promptText: row.promptText, setterID: row.setterId,
-            participantID: row.participantId, participantName: row.participantName,
+            participantID: id, participantName: name,
             participantAvatar: try asset(bucket: "avatars", path: row.participantAvatarPath),
             rotationOrderSnapshot: row.rotationOrderSnapshot,
             isActive: row.participantIsActive, answered: row.answered,

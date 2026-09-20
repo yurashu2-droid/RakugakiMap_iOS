@@ -51,9 +51,9 @@ struct GroupRowDTO: Decodable, Sendable {
 }
 struct GroupSummaryDTO: Decodable, Sendable {
     let groupId: UUID
-    let groupName: String
-    let groupDescription: String
-    let ownerId: UUID
+    let groupName: String?
+    let groupDescription: String?
+    let ownerId: UUID?
     let isOwner: Bool
     let memberCount: Int64
     let missionId: UUID?
@@ -67,9 +67,9 @@ struct GroupSummaryDTO: Decodable, Sendable {
     let hasAnswered: Bool
 }
 struct GroupMemberDTO: Decodable, Sendable {
-    let memberId: UUID
-    let displayName: String
-    let userUniqueId: String
+    let memberId: UUID?
+    let displayName: String?
+    let userUniqueId: String?
     let avatarPath: String?
     let role: String
     let status: String
@@ -118,8 +118,8 @@ struct GroupMissionParticipantDTO: Decodable, Sendable {
     let missionStatus: String
     let promptText: String?
     let setterId: UUID?
-    let participantId: UUID
-    let participantName: String
+    let participantId: UUID?
+    let participantName: String?
     let participantAvatarPath: String?
     let rotationOrderSnapshot: Int
     let participantIsActive: Bool

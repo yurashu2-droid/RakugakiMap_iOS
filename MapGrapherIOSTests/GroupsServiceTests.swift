@@ -5,6 +5,36 @@ import XCTest
 
 @MainActor
 final class GroupsServiceTests: XCTestCase {
+    func testBlockedGroupIdentitiesDoNotBreakVisibleGroup() async throws {
+        let context = SessionContext(userID: UUID(), epoch: UUID())
+        let groupID = UUID()
+        let remote = FakeGroupRPC()
+        remote.responses["list_my_group_summaries"] = try json([[
+            "group_id": groupID.uuidString, "group_name": NSNull(),
+            "group_description": NSNull(), "owner_id": NSNull(),
+            "is_owner": false, "member_count": 2,
+            "mission_id": NSNull(), "mission_date": NSNull(),
+            "mission_status": NSNull(), "prompt_text": NSNull(),
+            "setter_id": NSNull(), "setter_name": NSNull(),
+            "answered_count": 0, "participant_count": 0,
+            "has_answered": false
+        ]])
+        remote.responses["get_group_members"] = try json([[
+            "member_id": NSNull(), "display_name": NSNull(),
+            "user_unique_id": NSNull(), "avatar_path": NSNull(),
+            "role": "OWNER", "status": "ACTIVE", "rotation_order": 0,
+            "joined_at": "2026-09-21T00:00:00Z", "answered_today": false,
+            "is_today_setter": false
+        ]])
+        let service = SupabaseGroupsService(remote: remote, session: FakeGroupSession(context))
+        let summaries = try await service.summaries(context: context)
+        XCTAssertEqual(summaries.first?.memberCount, 2)
+        XCTAssertNil(summaries.first?.ownerID)
+        XCTAssertEqual(summaries.first?.name, "ブロック中のグループ")
+        let members = try await service.members(groupID: groupID, context: context)
+        XCTAssertTrue(members.isEmpty)
+    }
+
     func testSummaryKeepsMissionDateAndNullableFields() async throws {
         let owner = UUID()
         let context = SessionContext(userID: owner, epoch: UUID())
