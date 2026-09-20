@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "pin_rakugaki.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

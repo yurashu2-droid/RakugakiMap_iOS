@@ -46,6 +46,9 @@ struct MapScreen: View {
                 MapCanvasView(
                     photos: model.visiblePhotos,
                     center: model.currentLocation,
+                    assetLoader: assetLoader,
+                    sessionContext: sessionContext,
+                    showsUserLocation: !isUITesting,
                     onSelect: presentDetail(for:),
                     onRegionSettled: search(center:)
                 )

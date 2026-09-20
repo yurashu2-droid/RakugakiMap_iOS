@@ -7,12 +7,17 @@ import MapGrapherCore
 struct MapCanvasView: UIViewRepresentable {
     let photos: [Photo]
     let center: GeoPoint?
+    let assetLoader: PrivateAssetLoader?
+    let sessionContext: SessionContext?
+    let showsUserLocation: Bool
     let onSelect: (Photo) -> Void
     let onRegionSettled: (GeoPoint) -> Void
 
     func makeCoordinator() -> Coordinator {
         Coordinator(
             photos: photos,
+            assetLoader: assetLoader,
+            sessionContext: sessionContext,
             onSelect: onSelect,
             onRegionSettled: onRegionSettled
         )
@@ -23,9 +28,9 @@ struct MapCanvasView: UIViewRepresentable {
         mapView.delegate = context.coordinator
         mapView.showsCompass = true
         mapView.showsScale = true
-        mapView.showsUserLocation = true
+        mapView.showsUserLocation = showsUserLocation
         mapView.register(
-            MKMarkerAnnotationView.self,
+            PhotoPinAnnotationView.self,
             forAnnotationViewWithReuseIdentifier: Coordinator.annotationReuseIdentifier
         )
         context.coordinator.update(photos: photos, center: center, mapView: mapView)
@@ -33,6 +38,7 @@ struct MapCanvasView: UIViewRepresentable {
     }
 
     func updateUIView(_ mapView: MKMapView, context: Context) {
+        mapView.showsUserLocation = showsUserLocation
         context.coordinator.photos = photos
         context.coordinator.onSelect = onSelect
         context.coordinator.onRegionSettled = onRegionSettled
@@ -44,6 +50,8 @@ struct MapCanvasView: UIViewRepresentable {
         static let annotationReuseIdentifier = "map.photo-pin"
 
         var photos: [Photo]
+        let assetLoader: PrivateAssetLoader?
+        let sessionContext: SessionContext?
         var onSelect: (Photo) -> Void
         var onRegionSettled: (GeoPoint) -> Void
 
@@ -52,10 +60,14 @@ struct MapCanvasView: UIViewRepresentable {
 
         init(
             photos: [Photo],
+            assetLoader: PrivateAssetLoader?,
+            sessionContext: SessionContext?,
             onSelect: @escaping (Photo) -> Void,
             onRegionSettled: @escaping (GeoPoint) -> Void
         ) {
             self.photos = photos
+            self.assetLoader = assetLoader
+            self.sessionContext = sessionContext
             self.onSelect = onSelect
             self.onRegionSettled = onRegionSettled
         }
@@ -96,18 +108,21 @@ struct MapCanvasView: UIViewRepresentable {
         }
 
         func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+            if annotation is MKUserLocation {
+                let reuseID = "map.player"
+                return mapView.dequeueReusableAnnotationView(withIdentifier: reuseID)
+                    ?? PlayerAnnotationView(annotation: annotation, reuseIdentifier: reuseID)
+            }
             guard let annotation = annotation as? PhotoAnnotation,
                   let view = mapView.dequeueReusableAnnotationView(
                       withIdentifier: Self.annotationReuseIdentifier,
                       for: annotation
-                  ) as? MKMarkerAnnotationView else {
+                  ) as? PhotoPinAnnotationView,
+                  let photo = photos.first(where: { $0.id == annotation.photoID }) else {
                 return nil
             }
-            view.markerTintColor = UIColor(named: "AppCoral")
-            view.glyphImage = UIImage(systemName: "pencil.and.outline")
+            view.configure(photo: photo, assetLoader: assetLoader, context: sessionContext)
             view.clusteringIdentifier = Self.annotationReuseIdentifier
-            view.accessibilityIdentifier = "map.photo-pin.\(annotation.photoID.uuidString)"
-            view.canShowCallout = true
             return view
         }
 
