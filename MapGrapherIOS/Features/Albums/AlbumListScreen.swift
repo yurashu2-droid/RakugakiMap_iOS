@@ -7,6 +7,7 @@ struct AlbumListScreen: View {
     @StateObject private var model: AlbumListScreenModel
     @State private var showsCreateSheet = false
     @State private var albumToDelete: AlbumSummary?
+    @State private var showsDeleteConfirmation = false
 
     init(service: any SocialProfileUIService = FakeSocialProfileUIService()) {
         self.service = service
@@ -61,9 +62,10 @@ struct AlbumListScreen: View {
             }
             .confirmationDialog(
                 AppStrings.albumDeleteConfirm,
-                item: $albumToDelete
-            ) { album in
+                isPresented: $showsDeleteConfirmation
+            ) {
                 Button(AppStrings.albumDelete, role: .destructive) {
+                    guard let album = albumToDelete else { return }
                     Task { await model.delete(album: album) }
                 }
                 Button("posting.close.cancel", role: .cancel) {}
@@ -97,6 +99,7 @@ struct AlbumListScreen: View {
 
                     Button {
                         albumToDelete = album
+                        showsDeleteConfirmation = true
                     } label: {
                         Image(systemName: "trash")
                     }

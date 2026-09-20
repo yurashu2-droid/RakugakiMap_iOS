@@ -35,7 +35,8 @@ final class SafetyRepository: SafetyServing {
                 targetKind: kind, targetId: targetID, reason: reason, detail: detail),
             as: [SafetyReportDTO].self)
         try await check(context)
-        guard rows.count == 1, let row = rows.first, row.status == "RECEIVED" else {
+        guard rows.count == 1, let row = rows.first,
+              ["RECEIVED", "REVIEWING", "RESOLVED"].contains(row.status) else {
             throw AppFailure.serviceUnavailable
         }
         return SafetyReportReceipt(id: row.reportId, receivedAt: row.receivedAt,
