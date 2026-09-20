@@ -29,7 +29,7 @@ final class SessionController: SessionProviding {
     private(set) var context: SessionContext?
     private let auth: any AuthSessionServicing
     private let linkHandler: AuthLinkHandler
-    private var listeningTask: Task<Void, Never>?
+    @ObservationIgnored nonisolated(unsafe) private var listeningTask: Task<Void, Never>?
     private var generation = 0
     private var acceptsEvents = true
     var onInvalidation: (@MainActor @Sendable (SessionContext) async -> Void)?
