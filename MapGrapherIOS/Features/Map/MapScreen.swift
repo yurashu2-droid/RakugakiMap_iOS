@@ -14,6 +14,8 @@ struct MapScreen: View {
     @StateObject private var model: MapScreenModel
     @State private var sheetRoute: MapSheetRoute?
     @State private var selectedPhoto: Photo?
+    @State private var trackingRequest = 0
+    @State private var isFollowingHeading = false
 
     init(
         isUITesting: Bool = false,
@@ -49,8 +51,10 @@ struct MapScreen: View {
                     assetLoader: assetLoader,
                     sessionContext: sessionContext,
                     showsUserLocation: !isUITesting,
+                    trackingRequest: trackingRequest,
                     onSelect: presentDetail(for:),
-                    onRegionSettled: search(center:)
+                    onRegionSettled: search(center:),
+                    onTrackingChanged: { isFollowingHeading = $0 }
                 )
                 .ignoresSafeArea(edges: .bottom)
 
@@ -60,6 +64,31 @@ struct MapScreen: View {
                 }
                 .padding(.horizontal, AppSpacing.medium)
                 .padding(.top, AppSpacing.small)
+
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        Button {
+                            trackingRequest &+= 1
+                        } label: {
+                            Image(systemName: "location.north.fill")
+                                .font(.title3.weight(.semibold))
+                                .foregroundStyle(isFollowingHeading ? AppColors.paper : AppColors.ink)
+                                .frame(width: 52, height: 52)
+                                .background(isFollowingHeading ? AppColors.coral : AppColors.paper,
+                                            in: Circle())
+                                .overlay {
+                                    Circle().stroke(AppColors.ink.opacity(0.12), lineWidth: 1)
+                                }
+                        }
+                        .disabled(model.currentLocation == nil || isUITesting)
+                        .accessibilityLabel(Text("map.current-location.button"))
+                        .accessibilityIdentifier("map.current-location.button")
+                    }
+                }
+                .padding(.horizontal, AppSpacing.medium)
+                .padding(.bottom, AppSpacing.medium)
             }
             .background(AppColors.paper)
             .navigationTitle(AppStrings.map)

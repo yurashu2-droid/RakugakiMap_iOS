@@ -10,8 +10,10 @@ struct MapCanvasView: UIViewRepresentable {
     let assetLoader: PrivateAssetLoader?
     let sessionContext: SessionContext?
     let showsUserLocation: Bool
+    let trackingRequest: Int
     let onSelect: (Photo) -> Void
     let onRegionSettled: (GeoPoint) -> Void
+    let onTrackingChanged: (Bool) -> Void
 
     func makeCoordinator() -> Coordinator {
         Coordinator(
@@ -19,7 +21,8 @@ struct MapCanvasView: UIViewRepresentable {
             assetLoader: assetLoader,
             sessionContext: sessionContext,
             onSelect: onSelect,
-            onRegionSettled: onRegionSettled
+            onRegionSettled: onRegionSettled,
+            onTrackingChanged: onTrackingChanged
         )
     }
 
@@ -29,11 +32,17 @@ struct MapCanvasView: UIViewRepresentable {
         mapView.showsCompass = true
         mapView.showsScale = true
         mapView.showsUserLocation = showsUserLocation
+        mapView.isPitchEnabled = true
+        mapView.isRotateEnabled = true
+        let camera = mapView.camera
+        camera.pitch = 45
+        mapView.setCamera(camera, animated: false)
         mapView.register(
             PhotoPinAnnotationView.self,
             forAnnotationViewWithReuseIdentifier: Coordinator.annotationReuseIdentifier
         )
-        context.coordinator.update(photos: photos, center: center, mapView: mapView)
+        context.coordinator.update(photos: photos, center: center,
+                                   trackingRequest: trackingRequest, mapView: mapView)
         return mapView
     }
 
@@ -42,7 +51,9 @@ struct MapCanvasView: UIViewRepresentable {
         context.coordinator.photos = photos
         context.coordinator.onSelect = onSelect
         context.coordinator.onRegionSettled = onRegionSettled
-        context.coordinator.update(photos: photos, center: center, mapView: mapView)
+        context.coordinator.onTrackingChanged = onTrackingChanged
+        context.coordinator.update(photos: photos, center: center,
+                                   trackingRequest: trackingRequest, mapView: mapView)
     }
 
     @MainActor
@@ -54,8 +65,12 @@ struct MapCanvasView: UIViewRepresentable {
         let sessionContext: SessionContext?
         var onSelect: (Photo) -> Void
         var onRegionSettled: (GeoPoint) -> Void
+        var onTrackingChanged: (Bool) -> Void
 
         private var hasConfiguredInitialRegion = false
+        private var hasStartedTracking = false
+        private var handledTrackingRequest = 0
+        private var lastReportedCenter: CLLocationCoordinate2D?
         private var settleTask: Task<Void, Never>?
 
         init(
@@ -63,16 +78,19 @@ struct MapCanvasView: UIViewRepresentable {
             assetLoader: PrivateAssetLoader?,
             sessionContext: SessionContext?,
             onSelect: @escaping (Photo) -> Void,
-            onRegionSettled: @escaping (GeoPoint) -> Void
+            onRegionSettled: @escaping (GeoPoint) -> Void,
+            onTrackingChanged: @escaping (Bool) -> Void
         ) {
             self.photos = photos
             self.assetLoader = assetLoader
             self.sessionContext = sessionContext
             self.onSelect = onSelect
             self.onRegionSettled = onRegionSettled
+            self.onTrackingChanged = onTrackingChanged
         }
 
-        func update(photos: [Photo], center: GeoPoint?, mapView: MKMapView) {
+        func update(photos: [Photo], center: GeoPoint?,
+                    trackingRequest: Int, mapView: MKMapView) {
             let existing = mapView.annotations.compactMap { $0 as? PhotoAnnotation }
             let existingIDs = Set(existing.map(\.photoID))
             let incomingIDs = Set(photos.map(\.id))
@@ -89,22 +107,36 @@ struct MapCanvasView: UIViewRepresentable {
                 mapView.addAnnotations(additions)
             }
 
-            guard !hasConfiguredInitialRegion else { return }
-            let initialCenter = center ?? photos.first?.location
-            guard let initialCenter else { return }
-            let coordinate = CLLocationCoordinate2D(
-                latitude: initialCenter.latitude,
-                longitude: initialCenter.longitude
-            )
-            mapView.setRegion(
-                MKCoordinateRegion(
-                    center: coordinate,
-                    latitudinalMeters: 1_000,
-                    longitudinalMeters: 1_000
-                ),
-                animated: false
-            )
-            hasConfiguredInitialRegion = true
+            if !hasConfiguredInitialRegion,
+               let initialCenter = center ?? photos.first?.location {
+                let coordinate = CLLocationCoordinate2D(
+                    latitude: initialCenter.latitude,
+                    longitude: initialCenter.longitude
+                )
+                let camera = MKMapCamera(lookingAtCenter: coordinate,
+                                         fromDistance: 1_000, pitch: 45, heading: 0)
+                mapView.setCamera(camera, animated: false)
+                hasConfiguredInitialRegion = true
+            }
+
+            if !hasStartedTracking, mapView.showsUserLocation, center != nil {
+                hasStartedTracking = true
+                mapView.setUserTrackingMode(.followWithHeading, animated: false)
+            }
+            if trackingRequest != handledTrackingRequest {
+                handledTrackingRequest = trackingRequest
+                if mapView.showsUserLocation {
+                    mapView.setUserTrackingMode(.followWithHeading, animated: true)
+                }
+            }
+        }
+
+        func mapView(_ mapView: MKMapView, didChange mode: MKUserTrackingMode,
+                     animated: Bool) {
+            let followsHeading = mode == .followWithHeading
+            Task { @MainActor [weak self] in
+                self?.onTrackingChanged(followsHeading)
+            }
         }
 
         func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
@@ -149,6 +181,11 @@ struct MapCanvasView: UIViewRepresentable {
                           latitude: region.center.latitude,
                           longitude: region.center.longitude
                       ) else { return }
+                if let previous = self.lastReportedCenter,
+                   MKMapPoint(previous).distance(to: MKMapPoint(region.center)) < 75 {
+                    return
+                }
+                self.lastReportedCenter = region.center
                 self.onRegionSettled(point)
             }
         }

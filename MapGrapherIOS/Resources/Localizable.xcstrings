@@ -1,6 +1,17 @@
 {
   "sourceLanguage" : "ja",
   "strings" : {
+    "map.current-location.button" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "現在地と向きに合わせる"
+          }
+        }
+      }
+    },
     "tab.map.title" : {
       "extractionState" : "manual",
       "localizations" : {
