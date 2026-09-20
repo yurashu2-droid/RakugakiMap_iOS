@@ -60,3 +60,32 @@ public struct SessionContext: Equatable, Sendable {
         self.epoch = epoch
     }
 }
+
+public struct LocationSample: Equatable, Sendable {
+    public let point: GeoPoint
+    public let horizontalAccuracyM: Double
+    public let timestamp: Date
+
+    public init?(point: GeoPoint, horizontalAccuracyM: Double, timestamp: Date) {
+        guard horizontalAccuracyM.isFinite,
+              horizontalAccuracyM >= 0,
+              timestamp.timeIntervalSinceReferenceDate.isFinite else {
+            return nil
+        }
+        self.point = point
+        self.horizontalAccuracyM = horizontalAccuracyM
+        self.timestamp = timestamp
+    }
+}
+
+public struct PhotoPermissions: Equatable, Sendable {
+    public let canView: Bool
+    public let canDraw: Bool
+    public let isOwner: Bool
+
+    public init(canView: Bool, canDraw: Bool, isOwner: Bool) {
+        self.canView = canView
+        self.canDraw = canDraw
+        self.isOwner = isOwner
+    }
+}

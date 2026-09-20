@@ -28,7 +28,7 @@ unitは`MapGrapherIOS`、UIは`MapGrapherIOSUI`という共有schemeで分離し
 
 ## 実機
 
-この作業環境はWindowsで、Swift/Xcodeと接続iPhoneはない。ARのG1判定は未実施。
+この作業環境はWindowsで、Swift/Xcodeと接続iPhoneはない。ユーザーはiPhoneを所有しているがMacはないため、[Windowsからの実機検証](IPHONE_FROM_WINDOWS.md)へ進む。ARのG1判定は未実施。
 Macでprojectを生成後、Signing & Capabilitiesで所有するTeamと開発用Bundle IDを設定してiPhoneへ実行する。
 Teamや署名鍵はコミットしない。生成projectへの設定は再生成で消えるので、手元の設定値を管理する場合はgitignore対象の`Local.xcconfig`を使う。
 

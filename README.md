@@ -24,3 +24,4 @@ swift test --package-path Packages/MapGrapherCore
 ```
 
 Macでの生成・実行手順は[開発環境](docs/ENVIRONMENT.md)を参照してください。
+Macを持たない場合の実機検証は[WindowsからiPhoneへ](docs/IPHONE_FROM_WINDOWS.md)を参照してください。

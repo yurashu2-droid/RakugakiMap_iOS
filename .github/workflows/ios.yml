@@ -77,3 +77,22 @@ jobs:
           path: .build/verification
           if-no-files-found: ignore
           retention-days: 7
+  ipa:
+    needs: [core, ios]
+    runs-on: macos-15
+    timeout-minutes: 20
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Package unsigned IPA
+        run: bash scripts/package-ipa.sh
+      - name: iLoader IPA
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: RakugakiMap-unsigned-ipa
+          path: .build/ipa-output
+          if-no-files-found: error
+          retention-days: 14

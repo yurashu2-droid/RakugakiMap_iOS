@@ -5,8 +5,11 @@ public enum SubmissionTransition: Sendable {
         from: SubmissionState,
         to: SubmissionState,
         requiresRemoteDependency: Bool,
-        dependencyRemoteID: UUID?
+        dependencyRemoteID: UUID?,
+        resumeStage: SubmissionResumeStage
     ) -> Bool {
+        guard resumeStage.isCompatible(with: from) else { return false }
+
         if requiresRemoteDependency && dependencyRemoteID == nil {
             switch to {
             case .uploading, .registering, .completed:
@@ -24,7 +27,9 @@ public enum SubmissionTransition: Sendable {
             }
         case .queued:
             switch to {
-            case .uploading, .needsLogin, .needsCorrection, .cancelled: return true
+            case .uploading: return resumeStage == .upload
+            case .registering: return resumeStage == .register
+            case .needsLogin, .needsCorrection, .cancelled: return true
             default: return false
             }
         case .uploading:
@@ -41,13 +46,16 @@ public enum SubmissionTransition: Sendable {
             }
         case .retryWaiting:
             switch to {
-            case .queued, .uploading, .registering,
-                 .needsLogin, .needsCorrection, .cancelled: return true
+            case .uploading: return resumeStage == .upload
+            case .registering: return resumeStage == .register
+            case .queued, .needsLogin, .needsCorrection, .cancelled: return true
             default: return false
             }
         case .needsLogin:
             switch to {
-            case .queued, .uploading, .registering, .cancelled: return true
+            case .uploading: return resumeStage == .upload
+            case .registering: return resumeStage == .register
+            case .queued, .cancelled: return true
             default: return false
             }
         case .needsCorrection:

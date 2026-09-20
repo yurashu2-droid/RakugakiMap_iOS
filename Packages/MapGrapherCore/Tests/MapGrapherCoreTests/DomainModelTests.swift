@@ -236,6 +236,46 @@ final class DomainModelTests: XCTestCase {
         XCTAssertEqual(uploading.payloadData, queued.payloadData)
     }
 
+    func testRegistrationProgressCannotRevertToUploadAfterRetryOrLogin() throws {
+        let registering = try XCTUnwrap(makeSubmission(
+            state: .registering, resumeStage: .register
+        ))
+        let interruptedStates: [SubmissionState] = [.retryWaiting, .needsLogin]
+
+        for state in interruptedStates {
+            XCTAssertNil(registering.replacingProgress(
+                state: state,
+                resumeStage: .upload,
+                remoteID: nil,
+                attemptCount: 1,
+                nextAttemptAt: nil,
+                lastFailure: nil,
+                leaseOwner: nil,
+                leaseExpiresAt: nil,
+                updatedAt: createdAt.addingTimeInterval(1)
+            ), "\(state)でuploadへ巻き戻さない")
+
+            let preserved = try XCTUnwrap(registering.replacingProgress(
+                state: state,
+                resumeStage: .register,
+                remoteID: nil,
+                attemptCount: 1,
+                nextAttemptAt: nil,
+                lastFailure: nil,
+                leaseOwner: nil,
+                leaseExpiresAt: nil,
+                updatedAt: createdAt.addingTimeInterval(1)
+            ))
+            XCTAssertFalse(SubmissionTransition.allows(
+                from: preserved.state,
+                to: .uploading,
+                requiresRemoteDependency: false,
+                dependencyRemoteID: nil,
+                resumeStage: preserved.resumeStage
+            ))
+        }
+    }
+
     func testLocalOperationOwnerIsCheckedIndependentlyOfOperationAndRemoteIDs() throws {
         let completed = try XCTUnwrap(makeSubmission(
             remoteID: remoteID, state: .completed, resumeStage: .none

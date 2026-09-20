@@ -30,7 +30,8 @@ final class RevealGateTests: XCTestCase {
     func testInvalidSampleBreaksConsecutiveSequence() {
         let first = Date(timeIntervalSince1970: 2_000)
         let next = first.addingTimeInterval(1)
-        let afterNext = first.addingTimeInterval(2)
+        let freshFirst = first.addingTimeInterval(2)
+        let freshSecond = first.addingTimeInterval(3)
         let cases: [(name: String, distance: Double, accuracy: Double, timestamp: Date, now: Date, radius: Double)] = [
             ("範囲外", 50.01, 5, next, next, 50),
             ("距離が負", -1, 5, next, next, 50),
@@ -54,13 +55,19 @@ final class RevealGateTests: XCTestCase {
                 distanceM: sample.distance, accuracyM: sample.accuracy,
                 timestamp: sample.timestamp, now: sample.now, radiusM: sample.radius
             ), sample.name)
+            if sample.timestamp == next {
+                XCTAssertFalse(gate.ingest(
+                    distanceM: 20, accuracyM: 5,
+                    timestamp: next, now: next, radiusM: 50
+                ), "\(sample.name): 処理済み時刻の再利用")
+            }
             XCTAssertFalse(gate.ingest(
                 distanceM: 20, accuracyM: 5,
-                timestamp: next, now: next, radiusM: 50
+                timestamp: freshFirst, now: freshFirst, radiusM: 50
             ), sample.name)
             XCTAssertTrue(gate.ingest(
                 distanceM: 20, accuracyM: 5,
-                timestamp: afterNext, now: afterNext, radiusM: 50
+                timestamp: freshSecond, now: freshSecond, radiusM: 50
             ), sample.name)
         }
     }
