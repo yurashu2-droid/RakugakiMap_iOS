@@ -21,7 +21,8 @@ final class LaunchUITests: XCTestCase {
 
     private var app: XCUIApplication!
 
-    override func setUpWithError() throws {
+    override func setUp() async throws {
+        try await super.setUp()
         continueAfterFailure = false
 
         app = XCUIApplication()

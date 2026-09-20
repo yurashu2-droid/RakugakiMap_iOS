@@ -85,4 +85,37 @@ final class RevealGateTests: XCTestCase {
         XCTAssertTrue(gate.ingest(distanceM: 20, accuracyM: 5, timestamp: second, now: second, radiusM: 50))
         XCTAssertTrue(gate.ingest(distanceM: 500, accuracyM: -1, timestamp: second, now: second, radiusM: 50))
     }
+
+    func testInvalidSampleDoesNotAllowDelayedOlderSamplesToUnlock() {
+        var gate = RevealGate()
+        let first = Date(timeIntervalSince1970: 2_000)
+        let invalid = first.addingTimeInterval(1)
+        let older = first.addingTimeInterval(-1)
+        let freshFirst = first.addingTimeInterval(2)
+        let freshSecond = first.addingTimeInterval(3)
+
+        XCTAssertFalse(gate.ingest(distanceM: 20, accuracyM: 5, timestamp: first, now: first, radiusM: 50))
+        XCTAssertFalse(gate.ingest(distanceM: 51, accuracyM: 5, timestamp: invalid, now: invalid, radiusM: 50))
+        XCTAssertFalse(gate.ingest(distanceM: 20, accuracyM: 5, timestamp: older, now: invalid, radiusM: 50))
+        XCTAssertFalse(gate.ingest(distanceM: 20, accuracyM: 5, timestamp: first, now: invalid, radiusM: 50))
+        XCTAssertFalse(gate.ingest(distanceM: 20, accuracyM: 5, timestamp: freshFirst, now: freshFirst, radiusM: 50))
+        XCTAssertTrue(gate.ingest(distanceM: 20, accuracyM: 5, timestamp: freshSecond, now: freshSecond, radiusM: 50))
+    }
+
+    func testLongInterruptionNeedsTwoFreshSamplesBeforeUnlock() {
+        var gate = RevealGate()
+        let first = Date(timeIntervalSince1970: 2_000)
+        let afterInterruption = first.addingTimeInterval(60)
+        let secondFreshSample = afterInterruption.addingTimeInterval(1)
+
+        XCTAssertFalse(gate.ingest(distanceM: 20, accuracyM: 5, timestamp: first, now: first, radiusM: 50))
+        XCTAssertFalse(gate.ingest(
+            distanceM: 20, accuracyM: 5,
+            timestamp: afterInterruption, now: afterInterruption, radiusM: 50
+        ))
+        XCTAssertTrue(gate.ingest(
+            distanceM: 20, accuracyM: 5,
+            timestamp: secondFreshSample, now: secondFreshSample, radiusM: 50
+        ))
+    }
 }

@@ -1,0 +1,4 @@
+// Local.xcconfigへコピーし、自分の開発用の値を設定する。
+// Team ID、証明書、秘密鍵を追跡ファイルへ追加しない。
+DEVELOPMENT_TEAM =
+PRODUCT_BUNDLE_IDENTIFIER = com.example.rakugakimap.development

@@ -17,8 +17,10 @@
 
 ## 検証
 
-GitHub ActionsのmacOSランナーでCoreを検証します。ARの平面検出・追跡はiPhone実機で別途確認します。CIは署名鍵やSupabaseの秘密情報を使いません。
+GitHub ActionsのmacOSランナーでCore・署名なしiOSビルド・Simulatorのunit/UIテストを検証します。ARの平面検出・追跡はiPhone実機で別途確認します。CIは署名鍵やSupabaseの秘密情報を使いません。
 
 ```bash
 swift test --package-path Packages/MapGrapherCore
 ```
+
+Macでの生成・実行手順は[開発環境](docs/ENVIRONMENT.md)を参照してください。
