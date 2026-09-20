@@ -74,4 +74,4 @@
 
 - 投稿画面のARスイッチで、写真・本人のラクガキ・AR公開を1回の操作で永続キューへ登録する。ARは写真とラクガキの登録完了後、解放50m・発見150m・表示幅1mの既定値で公開する。
 - 後続のラクガキとAR操作は依存先を固定した待機状態で保存し、アプリ再起動後のキュー再開でも残らないようにする。投稿結果はAR公開が完了するまで完了扱いにしない。
-- [run 35543019152](https://github.com/yurashu2-droid/RakugakiMap_iOS/actions/runs/35543019152)で実装前の新規テストが`invalidDraft`で失敗することを確認。実装後のCIとiPhone実機での投稿・現地表示は未確認。
+- [run 35543019152](https://github.com/yurashu2-droid/RakugakiMap_iOS/actions/runs/35543019152)で実装前の新規テストが`invalidDraft`で失敗することを確認。[run 35543843787](https://github.com/yurashu2-droid/RakugakiMap_iOS/actions/runs/35543843787)でCore、署名なしiOSビルド、unit/UIテスト、IPA生成の全ジョブ成功。IPAのcommit.txtは`42981b9`と一致し、SHA-256を照合した。iPhone実機での投稿・現地AR表示は未確認。
