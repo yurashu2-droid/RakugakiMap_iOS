@@ -47,7 +47,7 @@ struct LoadStateView<Content: View>: View {
                 content
             case .empty:
                 ContentUnavailableView(
-                    Text("state.empty.title"),
+                    "state.empty.title",
                     systemImage: "tray",
                     description: Text(emptyMessage)
                 )
@@ -55,7 +55,7 @@ struct LoadStateView<Content: View>: View {
             case .error:
                 VStack(spacing: AppSpacing.medium) {
                     ContentUnavailableView(
-                        Text("state.error.title"),
+                        "state.error.title",
                         systemImage: "exclamationmark.triangle",
                         description: Text(errorMessage)
                     )

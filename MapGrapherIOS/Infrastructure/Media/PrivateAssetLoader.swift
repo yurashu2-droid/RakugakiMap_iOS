@@ -12,8 +12,17 @@ protocol PrivateImageDownloading: Sendable {
 }
 
 struct URLSessionImageDownloader: PrivateImageDownloading {
+    private static let privateSession: URLSession = {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.urlCache = nil
+        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
+        configuration.httpCookieStorage = nil
+        configuration.httpShouldSetCookies = false
+        return URLSession(configuration: configuration)
+    }()
+
     func download(_ url: URL) async throws -> Data {
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let (data, response) = try await Self.privateSession.data(from: url)
         guard let http = response as? HTTPURLResponse else { throw AppFailure.serviceUnavailable }
         guard (200...299).contains(http.statusCode) else {
             throw AssetDownloadError.httpStatus(http.statusCode)

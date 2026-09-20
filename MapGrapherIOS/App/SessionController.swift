@@ -102,18 +102,22 @@ final class SessionController: SessionProviding {
 
     private func receive(_ event: AuthSessionState) async {
         guard acceptsEvents else { return }
+        let revision = generation
         switch event {
         case .authenticated(let userID):
             if context?.userID != userID {
                 await invalidate()
+                guard revision == generation, acceptsEvents else { return }
                 context = SessionContext(userID: userID, epoch: UUID())
             }
             state = .authenticated(userID)
         case .signedOut:
             await invalidate()
+            guard revision == generation, acceptsEvents else { return }
             state = .signedOut
         case .reauthenticationRequired:
             await invalidate()
+            guard revision == generation, acceptsEvents else { return }
             state = .reauthenticationRequired
         }
     }

@@ -14,7 +14,7 @@ struct DrawingExporter: Sendable {
 
     func export(document: DrawingDocument) async throws -> PreparedImage {
         let directory = outputDirectory
-        return try await Task.detached(priority: .userInitiated) {
+        let work = Task.detached(priority: .userInitiated) {
             try Task.checkCancellation()
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             let temporary = directory.appendingPathComponent(UUID().uuidString + ".tmp")
@@ -52,6 +52,16 @@ struct DrawingExporter: Sendable {
                 try? FileManager.default.removeItem(at: output)
                 throw error
             }
-        }.value
+        }
+        return try await withTaskCancellationHandler {
+            let prepared = try await work.value
+            if Task.isCancelled {
+                try? FileManager.default.removeItem(at: prepared.fileURL)
+                throw CancellationError()
+            }
+            return prepared
+        } onCancel: {
+            work.cancel()
+        }
     }
 }

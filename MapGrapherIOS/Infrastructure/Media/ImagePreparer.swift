@@ -21,9 +21,20 @@ struct ImagePreparer: Sendable {
 
     func prepare(input: URL) async throws -> PreparedImage {
         let directory = outputDirectory
-        return try await Task.detached(priority: .userInitiated) {
+        let work = Task.detached(priority: .userInitiated) {
+            try Task.checkCancellation()
             try Self.prepareSynchronously(input: input, outputDirectory: directory)
-        }.value
+        }
+        return try await withTaskCancellationHandler {
+            let prepared = try await work.value
+            if Task.isCancelled {
+                try? FileManager.default.removeItem(at: prepared.fileURL)
+                throw CancellationError()
+            }
+            return prepared
+        } onCancel: {
+            work.cancel()
+        }
     }
 
     private static func prepareSynchronously(input: URL, outputDirectory: URL) throws -> PreparedImage {
@@ -65,6 +76,7 @@ struct ImagePreparer: Sendable {
             let data = try Data(contentsOf: temporary)
             guard data.count <= 20 * 1024 * 1024 else { throw ImagePreparationError.outputTooLarge }
             let hash = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+            try Task.checkCancellation()
             try FileManager.default.moveItem(at: temporary, to: output)
             guard let prepared = PreparedImage(fileURL: output, mimeType: "image/jpeg",
                                                byteSize: Int64(data.count),
@@ -73,9 +85,11 @@ struct ImagePreparer: Sendable {
                                                sha256: hash) else {
                 throw ImagePreparationError.outputFailed
             }
+            try Task.checkCancellation()
             return prepared
         } catch {
             try? FileManager.default.removeItem(at: temporary)
+            try? FileManager.default.removeItem(at: output)
             throw error
         }
     }

@@ -56,6 +56,52 @@ final class SessionControllerTests: XCTestCase {
         await controller.start()
         XCTAssertEqual(controller.state, .reauthenticationRequired)
     }
+
+    func testLogoutDuringOldSessionInvalidationCannotRestoreNewAccount() async throws {
+        let first = UUID()
+        let auth = FakeAuthService(snapshot: .authenticated(first))
+        let controller = SessionController(auth: auth)
+        await controller.start()
+        let gate = InvalidationGate()
+        controller.onInvalidation = { _ in await gate.suspend() }
+        auth.nextSignInID = UUID()
+
+        let switching = Task {
+            try await controller.signIn(email: "test@example.invalid", password: "placeholder")
+        }
+        await gate.waitUntilStarted()
+        try await controller.signOut()
+        gate.resume()
+        try await switching.value
+
+        XCTAssertEqual(controller.state, .signedOut)
+        let current = await controller.currentContext()
+        XCTAssertNil(current)
+    }
+}
+
+@MainActor
+private final class InvalidationGate {
+    private var started: CheckedContinuation<Void, Never>?
+    private var blocked: CheckedContinuation<Void, Never>?
+    private var hasStarted = false
+
+    func suspend() async {
+        hasStarted = true
+        started?.resume()
+        started = nil
+        await withCheckedContinuation { blocked = $0 }
+    }
+
+    func waitUntilStarted() async {
+        if hasStarted { return }
+        await withCheckedContinuation { started = $0 }
+    }
+
+    func resume() {
+        blocked?.resume()
+        blocked = nil
+    }
 }
 
 @MainActor
