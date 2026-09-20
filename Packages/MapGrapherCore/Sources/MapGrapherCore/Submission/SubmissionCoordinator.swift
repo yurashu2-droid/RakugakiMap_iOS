@@ -17,6 +17,10 @@ public actor SubmissionCoordinator {
         guard await session.isCurrent(context) else { throw AppFailure.needsLogin }
         let rows = try await store.listPending(ownerID: context.userID)
         guard let row = rows.first(where: { $0.id == draftID }) else { throw AppFailure.notFound }
+        if row.kind == .groupAnswer {
+            await quarantineLegacyAnswer(row, context: context)
+            throw AppFailure.validation("旧形式のグループ回答は確認が必要です")
+        }
         guard row.state == .draft || row.state == .retryWaiting ||
               row.state == .needsLogin || row.state == .outcomeUnknown else {
             throw AppFailure.validation("この投稿は開始できません")
@@ -43,6 +47,10 @@ public actor SubmissionCoordinator {
         while await session.isCurrent(context) {
             guard let rows = try? await store.listPending(ownerID: context.userID) else { return }
             for row in rows where !active.contains(row.id) {
+                if row.kind == .groupAnswer {
+                    await quarantineLegacyAnswer(row, context: context)
+                    continue
+                }
                 guard row.state != .draft && row.state != .needsCorrection && row.state != .needsLogin,
                       row.nextAttemptAt.map({ $0 <= clock() }) ?? true,
                       !((row.state == .retryWaiting || row.state == .outcomeUnknown) &&
@@ -162,6 +170,24 @@ public actor SubmissionCoordinator {
 
     private func checkContext(_ context: SessionContext) async throws {
         guard await session.isCurrent(context) else { throw AppFailure.needsLogin }
+    }
+
+    private func quarantineLegacyAnswer(_ row: PendingSubmission,
+                                        context: SessionContext) async {
+        guard row.state != .needsCorrection, await session.isCurrent(context) else { return }
+        let leaseID = UUID()
+        guard let claimed = try? await store.claim(id: row.id, ownerID: context.userID,
+            leaseOwner: leaseID, leaseExpiresAt: clock().addingTimeInterval(300)) else { return }
+        if let corrected = claimed.replacingProgress(
+            state: .needsCorrection, resumeStage: claimed.resumeStage,
+            remoteID: claimed.remoteID, attemptCount: claimed.attemptCount,
+            nextAttemptAt: nil,
+            lastFailure: .validation("旧形式の回答は再送せず状態確認が必要です"),
+            leaseOwner: leaseID, leaseExpiresAt: claimed.leaseExpiresAt,
+            updatedAt: max(clock(), claimed.updatedAt)) {
+            try? await store.save(corrected, leaseOwner: leaseID)
+        }
+        try? await store.release(id: row.id, ownerID: context.userID, leaseOwner: leaseID)
     }
 
     private func changed(_ row: PendingSubmission, state: SubmissionState,

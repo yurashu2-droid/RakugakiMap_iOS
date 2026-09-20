@@ -17,6 +17,8 @@ final class RealPostingUIService: PostingUIService {
     private let imagePreparer: ImagePreparer
     private let drawingExporter: DrawingExporter
     private let location: any MapLocationProviding
+    private let missionLookup: (any GroupMissionSnapshotLookingUp)?
+    private let answerRecovery: GroupAnswerRecovery?
     private var savedPayloads: [UUID: Data] = [:]
     private var savedShape: [UUID: (hasDrawing: Bool, missionID: UUID?)] = [:]
     private var savedRows: [UUID: PendingSubmission] = [:]
@@ -25,11 +27,14 @@ final class RealPostingUIService: PostingUIService {
     init(context: SessionContext, session: any SessionProviding, store: any SubmissionStoring,
          coordinator: SubmissionCoordinator, files: DraftFileStore,
          imagePreparer: ImagePreparer, drawingExporter: DrawingExporter,
-         location: any MapLocationProviding) {
+         location: any MapLocationProviding,
+         missionLookup: (any GroupMissionSnapshotLookingUp)? = nil,
+         answerRecovery: GroupAnswerRecovery? = nil) {
         self.fixedContext = context; self.session = session
         self.store = store; self.coordinator = coordinator
         self.files = files; self.imagePreparer = imagePreparer
         self.drawingExporter = drawingExporter; self.location = location
+        self.missionLookup = missionLookup; self.answerRecovery = answerRecovery
     }
 
     func prepareImage(data: Data, suggestedFilename: String) async throws -> PreparedPostingImage {
@@ -104,6 +109,31 @@ final class RealPostingUIService: PostingUIService {
            (drawing.pixelWidth != image.pixelWidth || drawing.pixelHeight != image.pixelHeight) {
             throw PostingServiceError.invalidDraft
         }
+        if let missionID = draft.missionID {
+            guard let missionLookup, let answerRecovery else {
+                throw PostingServiceError.invalidDraft
+            }
+            let answerID = Self.childID(parent: draft.id, purpose: "group-answer")
+            if let existing = try await answerRecovery.load(operationID: answerID,
+                                                             context: context) {
+                guard existing.missionID == missionID,
+                      existing.photoOperationID == draft.id else {
+                    throw PostingServiceError.invalidDraft
+                }
+            } else {
+                guard let snapshot = try await missionLookup.current(missionID: missionID,
+                                                                      context: context) else {
+                    throw PostingServiceError.invalidDraft
+                }
+                guard await session.isCurrent(context) else {
+                    throw PostingServiceError.permissionDenied
+                }
+                _ = try await answerRecovery.create(operationID: answerID,
+                    groupID: snapshot.groupID, missionID: snapshot.missionID,
+                    missionDate: snapshot.missionDate, photoOperationID: draft.id,
+                    context: context)
+            }
+        }
         let owner = context.userID
         let photoPayload = SubmissionPayload.photo(.init(
             title: draft.title, point: point, privacy: draft.visibility,
@@ -151,20 +181,6 @@ final class RealPostingUIService: PostingUIService {
             try await insertIfMissing(row, context: context)
         }
 
-        if let missionID = draft.missionID {
-            let answerID = Self.childID(parent: draft.id, purpose: "group-answer")
-            let payload = SubmissionPayload.groupAnswer(.init(missionID: missionID,
-                                                               targetPhotoID: nil))
-            guard let row = PendingSubmission(id: answerID, ownerID: owner, schemaVersion: 1,
-                kind: .groupAnswer, payloadData: try JSONEncoder().encode(payload),
-                localFilePaths: [], assetPaths: [], dependsOn: draft.id,
-                remoteID: nil, state: .draft, resumeStage: .register, attemptCount: 0,
-                nextAttemptAt: nil, lastFailure: nil, leaseOwner: nil, leaseExpiresAt: nil,
-                createdAt: draft.createdAt, updatedAt: max(Date(), draft.createdAt)) else {
-                throw PostingServiceError.invalidDraft
-            }
-            try await insertIfMissing(row, context: context)
-        }
         guard await session.isCurrent(context) else { throw PostingServiceError.permissionDenied }
     }
 
@@ -204,11 +220,28 @@ final class RealPostingUIService: PostingUIService {
         }
         let active = operationIDs.compactMap { id in remaining.first(where: { $0.id == id }) }
         guard await session.isCurrent(context) else { throw PostingServiceError.permissionDenied }
+        var answerState: SubmissionState?
+        if let missionID = draft.missionID, remotePhotoID != nil {
+            guard let answerRecovery else { throw PostingServiceError.invalidDraft }
+            let answerID = Self.childID(parent: draft.id, purpose: "group-answer")
+            let answer = try await answerRecovery.submit(operationID: answerID, context: context)
+            guard answer.missionID == missionID else { throw PostingServiceError.invalidDraft }
+            answerState = switch answer.phase {
+            case .completed: .completed
+            case .needsCorrection: .needsCorrection
+            case .outcomeUnknown, .submitting: .outcomeUnknown
+            case .awaitingPhoto, .ready: .retryWaiting
+            }
+        }
+        if answerState == .needsCorrection || answerState == .outcomeUnknown {
+            return PostingSubmissionResult(draftID: draft.id, state: answerState!,
+                                           remotePhotoID: remotePhotoID)
+        }
         if let first = active.first {
             return PostingSubmissionResult(draftID: draft.id, state: first.state,
                                            remotePhotoID: remotePhotoID)
         }
-        return PostingSubmissionResult(draftID: draft.id, state: .completed,
+        return PostingSubmissionResult(draftID: draft.id, state: answerState ?? .completed,
                                        remotePhotoID: remotePhotoID)
     }
 
@@ -252,7 +285,6 @@ final class RealPostingUIService: PostingUIService {
     private func childIDs(for draft: PostingDraft) -> [UUID] {
         var ids: [UUID] = []
         if draft.hasDrawing { ids.append(Self.childID(parent: draft.id, purpose: "rakugaki")) }
-        if draft.missionID != nil { ids.append(Self.childID(parent: draft.id, purpose: "group-answer")) }
         return ids
     }
 

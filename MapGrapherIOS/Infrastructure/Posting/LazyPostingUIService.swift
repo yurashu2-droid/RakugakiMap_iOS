@@ -49,13 +49,20 @@ final class LazyPostingUIService: PostingUIService {
                                                             files: files)
                 let coordinator = SubmissionCoordinator(store: store, session: session,
                                                         transport: transport)
+                let groups = SupabaseGroupsService(gateway: gateway, session: session)
+                let answerJournal = try GroupAnswerRecoveryStore()
+                let answerRecovery = GroupAnswerRecovery(journal: answerJournal,
+                    photos: SubmissionPhotoLookup(submissions: store),
+                    remote: GroupsMissionAnswerRemote(groups: groups), session: session)
                 let temporary = FileManager.default.temporaryDirectory
                 return RealPostingUIService(
                     context: context, session: session, store: store,
                     coordinator: coordinator, files: files,
                     imagePreparer: ImagePreparer(outputDirectory: temporary.appendingPathComponent("Prepared")),
                     drawingExporter: DrawingExporter(outputDirectory: temporary.appendingPathComponent("Drawings")),
-                    location: MapLocationAdapter()
+                    location: MapLocationAdapter(),
+                    missionLookup: GroupsMissionSnapshotLookup(groups: groups),
+                    answerRecovery: answerRecovery
                 )
             }
         }

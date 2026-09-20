@@ -135,6 +135,32 @@ final class SubmissionCoordinatorTests: XCTestCase {
         XCTAssertEqual(calls.requests, [childID])
     }
 
+    func testLegacyGroupAnswerIsRetainedForCorrectionWithoutRPC() async throws {
+        let owner = UUID()
+        let context = SessionContext(userID: owner, epoch: UUID())
+        let store = MemorySubmissionStore()
+        let transport = FakeSubmissionTransport()
+        let id = UUID()
+        let payload = SubmissionPayload.groupAnswer(.init(missionID: UUID(),
+                                                            targetPhotoID: UUID()))
+        let legacy = PendingSubmission(id: id, ownerID: owner, schemaVersion: 1,
+            kind: .groupAnswer, payloadData: try JSONEncoder().encode(payload),
+            localFilePaths: [], assetPaths: [], dependsOn: nil, remoteID: nil,
+            state: .outcomeUnknown, resumeStage: .register, attemptCount: 1,
+            nextAttemptAt: Date(), lastFailure: .outcomeUnknown,
+            leaseOwner: nil, leaseExpiresAt: nil,
+            createdAt: Date().addingTimeInterval(-10), updatedAt: Date())!
+        try await store.insertDraft(legacy)
+        let coordinator = SubmissionCoordinator(store: store,
+            session: FakeSubmissionSession(context: context), transport: transport)
+        await coordinator.resume(context: context)
+        let rows = await store.listPending(ownerID: owner)
+        XCTAssertEqual(rows.first?.state, .needsCorrection)
+        XCTAssertEqual(rows.first?.id, id)
+        let calls = await transport.calls
+        XCTAssertTrue(calls.requests.isEmpty)
+    }
+
     private func makeDraft(id: UUID, owner: UUID, payload: SubmissionPayload) throws -> PendingSubmission {
         let data = try JSONEncoder().encode(payload)
         return PendingSubmission(id: id, ownerID: owner, schemaVersion: 1, kind: .photo,

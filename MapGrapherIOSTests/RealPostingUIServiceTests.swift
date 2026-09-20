@@ -118,24 +118,89 @@ final class RealPostingUIServiceTests: XCTestCase {
         XCTAssertTrue(rows.isEmpty)
     }
 
-    func testMissionAnswerWaitsForPhotoAndCompletesAsDependentOperation() async throws {
+    func testMissionAnswerWaitsForPhotoAndCompletesThroughJournal() async throws {
         let fixture = try makeFixture()
         defer { try? FileManager.default.removeItem(at: fixture.root) }
         let prepared = try await fixture.service.prepareImage(
             data: FakePostingUIService.fixtureImageData(), suggestedFilename: "camera.png")
         var draft = PostingDraft(missionID: UUID())
+        fixture.missionRemote.missionID = draft.missionID
         draft.preparedImage = prepared
         draft.title = "写真"
         draft.location = GeoPoint(latitude: 35, longitude: 139)
         try await fixture.service.saveDraft(draft)
         let before = try await fixture.store.listPending(ownerID: fixture.context.userID)
-        XCTAssertEqual(before.count, 2)
-        XCTAssertEqual(before.first(where: { $0.kind == .groupAnswer })?.dependsOn, draft.id)
+        XCTAssertEqual(before.count, 1)
+        XCTAssertFalse(before.contains(where: { $0.kind == .groupAnswer }))
         let result = try await fixture.service.submit(draft)
         XCTAssertEqual(result.state, .completed)
         let calls = await fixture.transport.calls
-        XCTAssertEqual(calls.requests.count, 2)
-        XCTAssertEqual(calls.requests.first, draft.id)
+        XCTAssertEqual(calls.requests, [draft.id])
+        XCTAssertEqual(fixture.missionRemote.submitCount, 1)
+        let answerRows = try await fixture.answerJournal.list(ownerID: fixture.context.userID)
+        XCTAssertEqual(answerRows.first?.remotePhotoID, draft.id)
+        XCTAssertEqual(answerRows.first?.phase, .completed)
+    }
+
+    func testMissionAnswerDoesNotSendBeforePhotoCompletes() async throws {
+        let fixture = try makeFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        await fixture.transport.setLoseFirstResponse()
+        let prepared = try await fixture.service.prepareImage(
+            data: FakePostingUIService.fixtureImageData(), suggestedFilename: "camera.png")
+        var draft = PostingDraft(missionID: UUID())
+        fixture.missionRemote.missionID = draft.missionID
+        draft.preparedImage = prepared
+        draft.title = "写真"
+        draft.location = GeoPoint(latitude: 35, longitude: 139)
+        try await fixture.service.saveDraft(draft)
+        let first = try await fixture.service.submit(draft)
+        XCTAssertEqual(first.state, .outcomeUnknown)
+        XCTAssertEqual(fixture.missionRemote.submitCount, 0)
+        let second = try await fixture.service.submit(draft)
+        XCTAssertEqual(second.state, .completed)
+        XCTAssertEqual(fixture.missionRemote.submitCount, 1)
+    }
+
+    func testMissionDayChangeRetainsPhotoWithoutAnswerRPC() async throws {
+        let fixture = try makeFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let prepared = try await fixture.service.prepareImage(
+            data: FakePostingUIService.fixtureImageData(), suggestedFilename: "camera.png")
+        var draft = PostingDraft(missionID: UUID())
+        fixture.missionRemote.missionID = draft.missionID
+        draft.preparedImage = prepared
+        draft.title = "写真"
+        draft.location = GeoPoint(latitude: 35, longitude: 139)
+        try await fixture.service.saveDraft(draft)
+        fixture.missionRemote.missionDate = "2026-09-22"
+        let result = try await fixture.service.submit(draft)
+        XCTAssertEqual(result.state, .needsCorrection)
+        XCTAssertEqual(result.remotePhotoID, draft.id)
+        XCTAssertEqual(fixture.missionRemote.submitCount, 0)
+        let rows = try await fixture.answerJournal.list(ownerID: fixture.context.userID)
+        XCTAssertEqual(rows.first?.missionDate, "2026-09-21")
+        XCTAssertEqual(rows.first?.remotePhotoID, draft.id)
+    }
+
+    func testMissionResponseLossDoesNotReplayAnswer() async throws {
+        let fixture = try makeFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let prepared = try await fixture.service.prepareImage(
+            data: FakePostingUIService.fixtureImageData(), suggestedFilename: "camera.png")
+        var draft = PostingDraft(missionID: UUID())
+        fixture.missionRemote.missionID = draft.missionID
+        fixture.missionRemote.loseResponse = true
+        draft.preparedImage = prepared
+        draft.title = "写真"
+        draft.location = GeoPoint(latitude: 35, longitude: 139)
+        try await fixture.service.saveDraft(draft)
+        let first = try await fixture.service.submit(draft)
+        XCTAssertEqual(first.state, .needsCorrection)
+        XCTAssertEqual(first.remotePhotoID, draft.id)
+        let second = try await fixture.service.submit(draft)
+        XCTAssertEqual(second.state, .needsCorrection)
+        XCTAssertEqual(fixture.missionRemote.submitCount, 1)
     }
 
     private func makeFixture() throws -> ServiceFixture {
@@ -149,13 +214,23 @@ final class RealPostingUIServiceTests: XCTestCase {
         let coordinator = SubmissionCoordinator(store: store, session: session,
                                                 transport: transport)
         let files = try DraftFileStore(rootURL: root.appendingPathComponent("Drafts"))
+        let groupID = UUID()
+        let missionRemote = PostingMissionRemote(groupID: groupID, ownerID: owner)
+        let answerJournal = try GroupAnswerRecoveryStore(
+            rootURL: root.appendingPathComponent("GroupAnswers"))
+        let answerRecovery = GroupAnswerRecovery(journal: answerJournal,
+            photos: SubmissionPhotoLookup(submissions: store),
+            remote: missionRemote, session: session)
         let service = RealPostingUIService(
             context: context, session: session, store: store, coordinator: coordinator, files: files,
             imagePreparer: ImagePreparer(outputDirectory: root.appendingPathComponent("Prepared")),
             drawingExporter: DrawingExporter(outputDirectory: root.appendingPathComponent("Drawing")),
-            location: PostingTestLocation())
+            location: PostingTestLocation(),
+            missionLookup: PostingMissionLookup(groupID: groupID),
+            answerRecovery: answerRecovery)
         return ServiceFixture(root: root, context: context, service: service,
-                              session: session, store: store, transport: transport)
+                              session: session, store: store, transport: transport,
+                              missionRemote: missionRemote, answerJournal: answerJournal)
     }
 }
 
@@ -167,6 +242,47 @@ private struct ServiceFixture {
     let session: PostingTestSession
     let store: PostingTestStore
     let transport: PostingTestTransport
+    let missionRemote: PostingMissionRemote
+    let answerJournal: GroupAnswerRecoveryStore
+}
+
+@MainActor
+private struct PostingMissionLookup: GroupMissionSnapshotLookingUp {
+    let groupID: UUID
+    func current(missionID: UUID, context: SessionContext) async throws -> GroupMissionSnapshot? {
+        GroupMissionSnapshot(groupID: groupID, missionID: missionID,
+                             missionDate: "2026-09-21")
+    }
+}
+
+@MainActor
+private final class PostingMissionRemote: MissionAnswerRemote {
+    let groupID: UUID
+    let ownerID: UUID
+    var missionID: UUID?
+    var missionDate = "2026-09-21"
+    var submitCount = 0
+    var loseResponse = false
+    init(groupID: UUID, ownerID: UUID) {
+        self.groupID = groupID; self.ownerID = ownerID
+    }
+    func missionStatus(groupID: UUID, context: SessionContext) async throws -> [GroupMissionParticipant] {
+        guard let missionID else { return [] }
+        return [GroupMissionParticipant(missionID: missionID, groupID: groupID,
+            missionDate: missionDate, missionStatus: .open,
+            promptText: "お題", setterID: nil, participantID: ownerID,
+            participantName: "本人", participantAvatar: nil,
+            rotationOrderSnapshot: 0, isActive: true, answered: false,
+            answerID: nil, answerPhotoID: nil, answerCreatedAt: nil,
+            photoAsset: nil, latestApprovedRakugakiAsset: nil)]
+    }
+    func submitAnswer(missionID: UUID, photoID: UUID,
+                      context: SessionContext) async throws -> GroupAnswer {
+        submitCount += 1
+        if loseResponse { throw URLError(.networkConnectionLost) }
+        return GroupAnswer(id: UUID(), missionID: missionID, userID: ownerID,
+            photoID: photoID, createdAt: Date(), updatedAt: Date())
+    }
 }
 
 @MainActor
