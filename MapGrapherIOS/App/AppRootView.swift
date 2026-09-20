@@ -56,18 +56,7 @@ private struct SessionRootView: View {
             ProgressView("ログイン状態を確認しています")
         case .authenticated:
             if let context = session.context {
-                RootTabs(photoReader: container.photoReader,
-                         locationProvider: container.mapLocationProvider,
-                         assetLoader: container.assetLoader,
-                         sessionContext: context,
-                         postingService: container.postingService(for: context),
-                         existingPhotoRakugakiService: container.existingPhotoRakugakiService(for: context),
-                         socialService: container.socialService(for: context),
-                         photoService: container.photoDetailService(for: context),
-                         groupsService: container.groupsService,
-                         groupsDataMode: .live,
-                         arRepository: container.arRepository,
-                         arSession: container.session)
+                ProfileBootstrapView(container: container, context: context)
                     .id(context.epoch)
             } else {
                 ProgressView("ログイン状態を確認しています")
