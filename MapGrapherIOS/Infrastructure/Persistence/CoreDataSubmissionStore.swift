@@ -39,7 +39,7 @@ final class CoreDataSubmissionStore: SubmissionStoring, @unchecked Sendable {
         let container = try await PersistentContainerFactory.make(storeURL: url)
         self.container = container
         self.context = container.newBackgroundContext()
-        self.context.mergePolicy = NSErrorMergePolicy
+        self.context.mergePolicy = NSMergePolicy(merge: .errorMergePolicyType)
     }
 
     func insertDraft(_ submission: PendingSubmission) async throws {
