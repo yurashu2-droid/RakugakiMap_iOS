@@ -22,7 +22,7 @@ struct GroupRecord: Sendable {
     let updatedAt: Date
 }
 
-struct GroupSummary: Sendable {
+struct GroupSummary: Identifiable, Sendable {
     let id: UUID
     let name: String
     let description: String
@@ -66,7 +66,7 @@ struct GroupInvitation: Sendable {
     let updatedAt: Date
 }
 
-struct GroupInvitationSummary: Sendable {
+struct GroupInvitationSummary: Identifiable, Sendable {
     let id: UUID
     let groupID: UUID
     let groupName: String

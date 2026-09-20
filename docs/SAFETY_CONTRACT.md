@@ -15,7 +15,7 @@
 
 | 入口 | 入力 | 成功応答 | 権限・失敗 |
 |---|---|---|---|
-| `report_content` | `client_request_id`, `target_kind` (`PHOTO`/`RAKUGAKI`/`USER`), `target_id`, `reason` (`HARASSMENT`/`SEXUAL`/`VIOLENCE`/`PRIVACY`/`SPAM`/`OTHER`), `detail`（任意、最大500字） | `report_id`, `received_at`, `status=RECEIVED` | ログイン必須。存在しない対象は`NOT_FOUND`。自分への通報は`INVALID_TARGET`。同一request IDと異なる内容は`REQUEST_CONFLICT`。 |
+| `report_content` | `client_request_id`, `target_kind` (`PHOTO`/`RAKUGAKI`/`USER`), `target_id`, `reason` (`HARASSMENT`/`SEXUAL`/`VIOLENCE`/`PRIVACY`/`SPAM`/`OTHER`), `detail`（任意、最大500字） | `report_id`, `received_at`, `status`（初回は`RECEIVED`、再送時は現在値） | ログイン必須。存在しない対象は`NOT_FOUND`。自分への通報は`INVALID_TARGET`。同一request IDと異なる内容は`REQUEST_CONFLICT`。 |
 | `block_user` | `target_user_id` | `blocked_user_id`, `blocked_at` | 本人・未存在を拒否。再送は同じ状態。 |
 | `unblock_user` | `target_user_id` | `unblocked_user_id`, `unblocked=true` | 本人だけ解除。再送可能。 |
 | `list_blocked_users` | なし | `target_user_id`, `user_unique_id`, `display_name`, `blocked_at`の配列 | 本人のブロックだけ返す。 |
