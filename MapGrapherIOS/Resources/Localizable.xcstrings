@@ -1437,7 +1437,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "承認後に、現地でARとして見つけられるようにします。"
+            "value" : "投稿後に自動でAR公開します。現地の50m以内で表示できます。"
           }
         }
       }
@@ -1585,13 +1585,13 @@
         }
       }
     },
-    "posting.status.approval-waiting" : {
+    "posting.status.ar-publishing" : {
       "extractionState" : "manual",
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "承認が完了するまでAR公開は待機します。"
+            "value" : "写真とラクガキの送信後、AR公開まで続けて処理します。"
           }
         }
       }

@@ -7,7 +7,7 @@ struct SubmissionStatusScreen: View {
     let error: PostingFlowError?
     let isBusy: Bool
     let isPrototype: Bool
-    let waitingForApproval: Bool
+    let isARPost: Bool
     let onRetry: () -> Void
     let onBack: () -> Void
 
@@ -29,13 +29,13 @@ struct SubmissionStatusScreen: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
-                if waitingForApproval && isWaiting {
-                    Text("posting.status.approval-waiting")
+                if isARPost && isWaiting {
+                    Text("posting.status.ar-publishing")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(AppColors.coral)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityIdentifier("posting.status.approval-waiting")
+                        .accessibilityIdentifier("posting.status.ar-publishing")
                 }
 
                 if let error {

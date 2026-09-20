@@ -98,7 +98,7 @@ final class RealPostingUIServiceTests: XCTestCase {
         XCTAssertTrue(switchedRows.isEmpty)
     }
 
-    func testARReservationFailsExplicitly() async throws {
+    func testARReservationRequiresDrawing() async throws {
         let fixture = try makeFixture()
         defer { try? FileManager.default.removeItem(at: fixture.root) }
         let prepared = try await fixture.service.prepareImage(
@@ -110,7 +110,7 @@ final class RealPostingUIServiceTests: XCTestCase {
         draft.reserveAR = true
         do {
             try await fixture.service.saveDraft(draft)
-            XCTFail("AR予約を黙って成功させてはいけません")
+            XCTFail("ラクガキなしのAR投稿は保存できません")
         } catch let error as PostingServiceError {
             XCTAssertEqual(error, .invalidDraft)
         }
@@ -138,6 +138,8 @@ final class RealPostingUIServiceTests: XCTestCase {
         let ar = try XCTUnwrap(rows.first { $0.kind == .ar })
         XCTAssertEqual(drawing.dependsOn, draft.id)
         XCTAssertEqual(ar.dependsOn, drawing.id)
+        XCTAssertEqual(drawing.state, .queued)
+        XCTAssertEqual(ar.state, .queued)
         let payload = try JSONDecoder().decode(SubmissionPayload.self, from: ar.payloadData)
         guard case let .ar(settings) = payload else { return XCTFail("AR設定が必要です") }
         XCTAssertEqual(settings.targetPhotoOperationID, draft.id)

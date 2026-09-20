@@ -20,7 +20,7 @@ final class RealPostingUIService: PostingUIService {
     private let missionLookup: (any GroupMissionSnapshotLookingUp)?
     private let answerRecovery: GroupAnswerRecovery?
     private var savedPayloads: [UUID: Data] = [:]
-    private var savedShape: [UUID: (hasDrawing: Bool, missionID: UUID?)] = [:]
+    private var savedShape: [UUID: (hasDrawing: Bool, reserveAR: Bool, missionID: UUID?)] = [:]
     private var savedRows: [UUID: PendingSubmission] = [:]
     private var preparedImages: [UUID: String] = [:]
 
@@ -110,10 +110,10 @@ final class RealPostingUIService: PostingUIService {
               draft.createdAt.timeIntervalSinceReferenceDate.isFinite else {
             throw PostingServiceError.invalidDraft
         }
-        // 半径などの選択値がUIに無いため、AR予約を暗黙に成功させない。
-        guard !draft.reserveAR else { throw PostingServiceError.invalidDraft }
+        guard !draft.reserveAR || draft.hasDrawing else { throw PostingServiceError.invalidDraft }
         if let previous = savedShape[draft.id],
-           previous.hasDrawing != draft.hasDrawing || previous.missionID != draft.missionID {
+           previous.hasDrawing != draft.hasDrawing || previous.reserveAR != draft.reserveAR ||
+           previous.missionID != draft.missionID {
             throw PostingServiceError.invalidDraft
         }
         if let drawing = draft.drawing, !drawing.strokes.isEmpty,
@@ -168,7 +168,7 @@ final class RealPostingUIService: PostingUIService {
         }
         try await insertIfMissing(photo, context: context)
         savedPayloads[draft.id] = photoData
-        savedShape[draft.id] = (draft.hasDrawing, draft.missionID)
+        savedShape[draft.id] = (draft.hasDrawing, draft.reserveAR, draft.missionID)
 
         if let drawing = draft.drawing, !drawing.strokes.isEmpty {
             guard await session.isCurrent(context) else { throw PostingServiceError.permissionDenied }
@@ -184,9 +184,29 @@ final class RealPostingUIService: PostingUIService {
                   let row = PendingSubmission(id: drawingID, ownerID: owner, schemaVersion: 1,
                     kind: .rakugaki, payloadData: try Self.encodeStable(payload),
                     localFilePaths: [file.path], assetPaths: [asset], dependsOn: draft.id,
-                    remoteID: nil, state: .draft, resumeStage: .upload, attemptCount: 0,
+                    remoteID: nil, state: .queued, resumeStage: .upload, attemptCount: 0,
                     nextAttemptAt: nil, lastFailure: nil, leaseOwner: nil, leaseExpiresAt: nil,
                     createdAt: draft.createdAt, updatedAt: max(Date(), draft.createdAt)) else {
+                throw PostingServiceError.invalidDraft
+            }
+            try await insertIfMissing(row, context: context)
+        }
+
+        if draft.reserveAR {
+            let drawingID = Self.childID(parent: draft.id, purpose: "rakugaki")
+            let arID = Self.childID(parent: draft.id, purpose: "ar")
+            // 写真と自分のラクガキの同期完了後、既定の公開距離でARを作成する。
+            let payload = SubmissionPayload.ar(.init(
+                targetPhotoID: nil, targetPhotoOperationID: draft.id,
+                targetRakugakiID: nil, unlockRadiusM: 50,
+                discoveryRadiusM: 150, displayWidthM: 1))
+            guard let row = PendingSubmission(id: arID, ownerID: owner, schemaVersion: 1,
+                kind: .ar, payloadData: try Self.encodeStable(payload),
+                localFilePaths: [], assetPaths: [], dependsOn: drawingID,
+                remoteID: nil, state: .queued, resumeStage: .upload,
+                attemptCount: 0, nextAttemptAt: nil, lastFailure: nil,
+                leaseOwner: nil, leaseExpiresAt: nil,
+                createdAt: draft.createdAt, updatedAt: max(Date(), draft.createdAt)) else {
                 throw PostingServiceError.invalidDraft
             }
             try await insertIfMissing(row, context: context)
@@ -196,7 +216,6 @@ final class RealPostingUIService: PostingUIService {
     }
 
     func submit(_ draft: PostingDraft) async throws -> PostingSubmissionResult {
-        guard !draft.reserveAR else { throw PostingServiceError.invalidDraft }
         guard await session.isCurrent(fixedContext) else {
             throw PostingServiceError.permissionDenied
         }
@@ -296,6 +315,7 @@ final class RealPostingUIService: PostingUIService {
     private func childIDs(for draft: PostingDraft) -> [UUID] {
         var ids: [UUID] = []
         if draft.hasDrawing { ids.append(Self.childID(parent: draft.id, purpose: "rakugaki")) }
+        if draft.reserveAR { ids.append(Self.childID(parent: draft.id, purpose: "ar")) }
         return ids
     }
 
