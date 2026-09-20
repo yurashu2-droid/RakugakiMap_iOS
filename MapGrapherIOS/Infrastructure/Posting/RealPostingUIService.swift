@@ -37,6 +37,17 @@ final class RealPostingUIService: PostingUIService {
         self.missionLookup = missionLookup; self.answerRecovery = answerRecovery
     }
 
+    func existingPhotoRakugakiService(gateway: SupabaseGateway,
+                                     photoReader: any PhotoReading,
+                                     assetLoader: PrivateAssetLoader) -> ExistingPhotoRakugakiService {
+        ExistingPhotoRakugakiService(
+            context: fixedContext, session: session, permissions: photoReader,
+            imageLoader: PrivateRakugakiBaseImageLoader(loader: assetLoader),
+            store: store, coordinator: coordinator, files: files,
+            exporter: drawingExporter,
+            approvalReader: SupabaseRakugakiApprovalReader(gateway: gateway, session: session))
+    }
+
     func prepareImage(data: Data, suggestedFilename: String) async throws -> PreparedPostingImage {
         guard await session.isCurrent(fixedContext) else {
             throw PostingServiceError.permissionDenied

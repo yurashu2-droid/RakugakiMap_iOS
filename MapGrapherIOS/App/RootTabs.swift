@@ -9,8 +9,11 @@ struct RootTabs: View {
     private let assetLoader: PrivateAssetLoader?
     private let sessionContext: SessionContext?
     private let postingService: any PostingUIService
+    private let existingPhotoRakugakiService: (any ExistingPhotoRakugakiServing)?
     private let socialService: any SocialProfileUIService
     private let photoService: any PhotoDetailUIService
+    private let groupsService: any GroupsServing
+    private let groupsDataMode: GroupUIDataMode
     private let arRepository: (any ARExperienceServing)?
     private let arSession: (any SessionProviding)?
     @StateObject private var router: AppRouter
@@ -23,8 +26,11 @@ struct RootTabs: View {
         assetLoader: PrivateAssetLoader? = nil,
         sessionContext: SessionContext? = nil,
         postingService: any PostingUIService = FakePostingUIService(),
+        existingPhotoRakugakiService: (any ExistingPhotoRakugakiServing)? = nil,
         socialService: any SocialProfileUIService = FakeSocialProfileUIService(),
         photoService: any PhotoDetailUIService = FakePhotoDetailUIService(),
+        groupsService: any GroupsServing = FakeGroupsServing(),
+        groupsDataMode: GroupUIDataMode = .fake,
         arRepository: (any ARExperienceServing)? = nil,
         arSession: (any SessionProviding)? = nil
     ) {
@@ -34,8 +40,11 @@ struct RootTabs: View {
         self.assetLoader = assetLoader
         self.sessionContext = sessionContext
         self.postingService = postingService
+        self.existingPhotoRakugakiService = existingPhotoRakugakiService
         self.socialService = socialService
         self.photoService = photoService
+        self.groupsService = groupsService
+        self.groupsDataMode = groupsDataMode
         self.arRepository = arRepository
         self.arSession = arSession
         _router = StateObject(wrappedValue: router ?? AppRouter())
@@ -49,6 +58,7 @@ struct RootTabs: View {
                 locationProvider: locationProvider,
                 assetLoader: assetLoader,
                 sessionContext: sessionContext,
+                existingPhotoRakugakiService: existingPhotoRakugakiService,
                 photoService: photoService
             ) { route in
                 router.navigate(to: route)
@@ -59,21 +69,28 @@ struct RootTabs: View {
                     .accessibilityLabel(Text(AppStrings.map))
             }
 
-            GroupsPrototypeScreen()
+            GroupListScreen(service: groupsService, context: sessionContext,
+                            dataMode: groupsDataMode, postingService: postingService,
+                            assetLoader: assetLoader,
+                            isUITesting: isUITesting)
                 .tag(AppRoute.Tab.groups)
                 .tabItem {
                     Label(AppStrings.groups, systemImage: "person.2.fill")
                         .accessibilityLabel(Text(AppStrings.groups))
                 }
 
-            NotificationsPrototypeScreen()
+            NotificationScreen(service: groupsService, context: sessionContext,
+                               dataMode: groupsDataMode, postingService: postingService,
+                               assetLoader: assetLoader,
+                               isUITesting: isUITesting)
                 .tag(AppRoute.Tab.notifications)
                 .tabItem {
                     Label(AppStrings.notifications, systemImage: "bell.fill")
                         .accessibilityLabel(Text(AppStrings.notifications))
                 }
 
-            ProfileScreen(service: socialService)
+            ProfileScreen(service: socialService, arRepository: arRepository,
+                          sessionContext: sessionContext)
                 .tag(AppRoute.Tab.profile)
                 .tabItem {
                     Label(AppStrings.profile, systemImage: "person.crop.circle.fill")

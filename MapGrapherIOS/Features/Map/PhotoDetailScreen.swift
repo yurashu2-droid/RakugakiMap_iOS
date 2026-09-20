@@ -40,6 +40,7 @@ struct PhotoDetailScreen: View {
     let rakugakis: [RakugakiSummary]
     let onOpenAR: () -> Void
     let photoService: any PhotoDetailUIService
+    let existingPhotoRakugakiService: (any ExistingPhotoRakugakiServing)?
 
     @Environment(\.dismiss) private var dismiss
     @State private var permissionState: PhotoPermissionState = .loading
@@ -49,6 +50,7 @@ struct PhotoDetailScreen: View {
     @State private var photoOperationError: Error?
     @State private var didCompletePhotoAction = false
     @State private var showsDeleteDialog = false
+    @State private var showsRakugakiFlow = false
 
     init(
         photo: Photo,
@@ -56,6 +58,7 @@ struct PhotoDetailScreen: View {
         assetLoader: PrivateAssetLoader? = nil,
         sessionContext: SessionContext? = nil,
         rakugakis: [RakugakiSummary] = [],
+        existingPhotoRakugakiService: (any ExistingPhotoRakugakiServing)? = nil,
         onOpenAR: @escaping () -> Void = {},
         photoService: any PhotoDetailUIService = FakePhotoDetailUIService()
     ) {
@@ -64,6 +67,7 @@ struct PhotoDetailScreen: View {
         self.assetLoader = assetLoader
         self.sessionContext = sessionContext
         self.rakugakis = rakugakis
+        self.existingPhotoRakugakiService = existingPhotoRakugakiService
         self.onOpenAR = onOpenAR
         self.photoService = photoService
         _likeState = State(
@@ -119,6 +123,11 @@ struct PhotoDetailScreen: View {
             }
             Button("posting.close.cancel", role: .cancel) {}
         }
+        .sheet(isPresented: $showsRakugakiFlow) {
+            if let existingPhotoRakugakiService {
+                AddRakugakiFlow(photo: photo, service: existingPhotoRakugakiService)
+            }
+        }
         .accessibilityIdentifier("screen.photo-detail")
         .accessibilityLabel(Text("map.photo-detail.title"))
         .task(id: photo.id) {
@@ -135,13 +144,13 @@ struct PhotoDetailScreen: View {
 
             HStack(spacing: AppSpacing.medium) {
                 Button {
-                    // 描画画面はL03で接続する。権限がない間は操作を許可しない。
+                    showsRakugakiFlow = true
                 } label: {
                     Label("photo.draw", systemImage: "pencil")
                         .frame(maxWidth: .infinity, minHeight: 44)
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(!canDraw)
+                .disabled(!canDraw || existingPhotoRakugakiService == nil)
                 .accessibilityIdentifier("photo.draw.button")
 
                 Button {

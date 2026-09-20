@@ -3,7 +3,7 @@ import MapGrapherCore
 
 /// 認証済み画面でだけ永続キューを開く。初期化失敗時は下書きを消さず再試行する。
 @MainActor
-final class LazyPostingUIService: PostingUIService {
+final class LazyPostingUIService: PostingUIService, ExistingPhotoRakugakiServing {
     let storesDraftsPersistently = false
     let performsNetworkSubmission = true
 
@@ -11,11 +11,17 @@ final class LazyPostingUIService: PostingUIService {
     private let gateway: SupabaseGateway
     private let session: any SessionProviding
     private var initializing: Task<RealPostingUIService, Error>?
+    private var existingPhotoService: ExistingPhotoRakugakiService?
+    private let photoReader: any PhotoReading
+    private let assetLoader: PrivateAssetLoader
 
-    init(context: SessionContext, gateway: SupabaseGateway, session: any SessionProviding) {
+    init(context: SessionContext, gateway: SupabaseGateway, session: any SessionProviding,
+         photoReader: any PhotoReading, assetLoader: PrivateAssetLoader) {
         self.context = context
         self.gateway = gateway
         self.session = session
+        self.photoReader = photoReader
+        self.assetLoader = assetLoader
     }
 
     func prepareImage(data: Data, suggestedFilename: String) async throws -> PreparedPostingImage {
@@ -33,6 +39,29 @@ final class LazyPostingUIService: PostingUIService {
 
     func submit(_ draft: PostingDraft) async throws -> PostingSubmissionResult {
         try await service().submit(draft)
+    }
+
+    func prepare(photo: Photo) async throws -> PreparedPostingImage {
+        try await rakugakiService().prepare(photo: photo)
+    }
+
+    func submit(photo: Photo, base: PreparedPostingImage,
+                document: DrawingDocument, operationID: UUID) async throws
+        -> ExistingRakugakiSubmissionResult {
+        try await rakugakiService().submit(photo: photo, base: base,
+                                          document: document, operationID: operationID)
+    }
+
+    func discard(base: PreparedPostingImage) {
+        existingPhotoService?.discard(base: base)
+    }
+
+    private func rakugakiService() async throws -> ExistingPhotoRakugakiService {
+        if let existingPhotoService { return existingPhotoService }
+        let created = try await service().existingPhotoRakugakiService(
+            gateway: gateway, photoReader: photoReader, assetLoader: assetLoader)
+        existingPhotoService = created
+        return created
     }
 
     private func service() async throws -> RealPostingUIService {

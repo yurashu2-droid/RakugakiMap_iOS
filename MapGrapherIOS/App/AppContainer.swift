@@ -45,9 +45,17 @@ final class AppContainer {
 
     func postingService(for context: SessionContext) -> any PostingUIService {
         if let existing = postingServices[context.epoch] { return existing }
-        let created = LazyPostingUIService(context: context, gateway: gateway, session: session)
+        let created = LazyPostingUIService(context: context, gateway: gateway,
+                                           session: session, photoReader: photoReader,
+                                           assetLoader: assetLoader)
         postingServices[context.epoch] = created
         return created
+    }
+
+    func existingPhotoRakugakiService(for context: SessionContext) -> any ExistingPhotoRakugakiServing {
+        if let existing = postingServices[context.epoch] { return existing }
+        _ = postingService(for: context)
+        return postingServices[context.epoch]!
     }
 
     func socialService(for context: SessionContext) -> any SocialProfileUIService {
