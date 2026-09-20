@@ -29,10 +29,11 @@ final class SupabasePhotoDetailService: PhotoDetailUIService {
             "toggle_like", parameters: PhotoIDRequestDTO(targetPhotoId: photoID))
         try await check(context)
         guard rows.count == 1, let row = rows.first,
-              row.liked == liked, row.likeCount >= 0,
+              row.likeCount >= 0,
               row.likeCount <= Int64(Int.max) else {
             throw PhotoDetailUIError.serviceUnavailable
         }
+        // 別端末で状態が変わっていても、再toggleせずサーバーの確定状態を返す。
         return PhotoLikeState(isLiked: row.liked, likeCount: Int(row.likeCount))
     }
 
@@ -59,8 +60,8 @@ final class SupabasePhotoDetailService: PhotoDetailUIService {
 
     func deletePhoto(photoID: UUID) async throws {
         let context = try await requireContext()
-        try await gateway.client.rpc("delete_photo",
-            params: PhotoIDRequestDTO(targetPhotoId: photoID)).execute()
+        try await gateway.rpcVoid("delete_photo",
+            parameters: PhotoIDRequestDTO(targetPhotoId: photoID))
         try await check(context)
         await assetLoader.invalidate(context: context)
     }

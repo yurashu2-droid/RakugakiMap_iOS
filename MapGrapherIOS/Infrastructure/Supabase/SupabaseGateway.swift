@@ -43,4 +43,16 @@ struct SupabaseGateway {
     ) async throws -> Response {
         try await client.rpc(name, params: parameters).execute().value
     }
+
+    func rpcVoid<Request: Encodable & Sendable>(
+        _ name: String, parameters: Request
+    ) async throws {
+        let response = try await client.rpc(name, params: parameters).execute()
+        let body = String(data: response.data, encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard (200...299).contains(response.status),
+              response.data.isEmpty || body == "null" else {
+            throw AppFailure.serviceUnavailable
+        }
+    }
 }

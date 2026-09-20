@@ -21,13 +21,7 @@ extension SupabaseGateway: GroupRPCCalling {
     func callVoid<Parameters: Encodable & Sendable>(
         _ name: String, parameters: Parameters
     ) async throws {
-        let response = try await client.rpc(name, params: parameters).execute()
-        let body = String(data: response.data, encoding: .utf8)?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        guard (200...299).contains(response.status),
-              response.data.isEmpty || body == "null" else {
-            throw GroupRPCError.invalidVoidResponse
-        }
+        try await rpcVoid(name, parameters: parameters)
     }
 }
 

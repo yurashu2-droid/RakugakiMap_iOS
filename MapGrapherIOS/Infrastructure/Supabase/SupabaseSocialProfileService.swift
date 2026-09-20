@@ -32,9 +32,7 @@ final class SupabaseSocialProfileService: SocialProfileUIService {
         let rows: [FriendRelationDTO] = try await gateway.rpc("pending_friend_requests",
                                                               parameters: EmptyRPC())
         try await check(context)
-        let metadata: [FriendRequestTimeDTO] = try await gateway.client.from("friend_requests")
-            .select("id,created_at").eq("addressee_id", value: context.userID.uuidString)
-            .eq("status", value: "PENDING").execute().value
+        let metadata = try await gateway.friendRequestTimes(addresseeID: context.userID)
         try await check(context)
         let times = Dictionary(uniqueKeysWithValues: metadata.map { ($0.id, $0.createdAt) })
         return try rows.map { row in
@@ -77,8 +75,8 @@ final class SupabaseSocialProfileService: SocialProfileUIService {
 
     func removeFriend(id: UUID) async throws {
         let context = try await requireContext()
-        try await gateway.client.rpc("remove_friend",
-            params: RemoveFriendRequestDTO(targetRequestId: id)).execute()
+        try await gateway.rpcVoid("remove_friend",
+            parameters: RemoveFriendRequestDTO(targetRequestId: id))
         try await check(context)
     }
 
@@ -91,9 +89,7 @@ final class SupabaseSocialProfileService: SocialProfileUIService {
         let context = try await requireContext()
         let name = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty, name.count <= 40 else { throw SocialUIError.invalidInput }
-        let rows: [ProfileDTO] = try await gateway.client.from("profiles")
-            .update(["display_name": name], returning: .representation)
-            .eq("id", value: context.userID.uuidString).execute().value
+        let rows = try await gateway.updateSocialProfile(id: context.userID, name: name)
         try await check(context)
         guard rows.count == 1, let row = rows.first, row.id == context.userID else {
             throw SocialUIError.serviceUnavailable
@@ -140,9 +136,7 @@ final class SupabaseSocialProfileService: SocialProfileUIService {
               let createdAt = row.createdAt else { throw SocialUIError.serviceUnavailable }
         let titles = try await ownedPhotoTitles(context: context)
         guard let title = titles[row.photoId] else { throw SocialUIError.permissionDenied }
-        let authors: [ProfileDTO] = try await gateway.client.from("profiles")
-            .select("id,user_unique_id,display_name,avatar_path")
-            .eq("id", value: row.authorId.uuidString).execute().value
+        let authors = try await gateway.socialProfiles(id: row.authorId)
         try await check(context)
         guard authors.count == 1, let author = authors.first else {
             throw SocialUIError.serviceUnavailable
@@ -155,9 +149,7 @@ final class SupabaseSocialProfileService: SocialProfileUIService {
 
     func albums() async throws -> [AlbumSummary] {
         let context = try await requireContext()
-        let rows: [AlbumDTO] = try await gateway.client.from("albums")
-            .select("id,owner_id,title,description,created_at")
-            .eq("owner_id", value: context.userID.uuidString).execute().value
+        let rows = try await gateway.ownedAlbums(ownerID: context.userID)
         try await check(context)
         var result: [AlbumSummary] = []
         for row in rows {
@@ -176,10 +168,8 @@ final class SupabaseSocialProfileService: SocialProfileUIService {
         guard !name.isEmpty, name.count <= 100, description.count <= 500 else {
             throw SocialUIError.invalidInput
         }
-        let rows: [AlbumDTO] = try await gateway.client.from("albums")
-            .insert(AlbumCreateDTO(ownerId: context.userID, title: name,
-                                   description: description), returning: .representation)
-            .execute().value
+        let rows = try await gateway.createOwnedAlbum(
+            AlbumCreateDTO(ownerId: context.userID, title: name, description: description))
         try await check(context)
         guard rows.count == 1, let row = rows.first, row.ownerId == context.userID else {
             throw SocialUIError.serviceUnavailable
@@ -196,9 +186,8 @@ final class SupabaseSocialProfileService: SocialProfileUIService {
     func addPhoto(photoID: UUID, to albumID: UUID) async throws -> AlbumPhoto {
         let context = try await requireContext()
         try await requireOwnedAlbum(albumID, context: context)
-        let rows: [AlbumPhotoDTO] = try await gateway.client.from("album_photos")
-            .insert(AlbumPhotoLinkDTO(albumId: albumID, photoId: photoID),
-                    returning: .representation).execute().value
+        let rows = try await gateway.addAlbumLink(
+            AlbumPhotoLinkDTO(albumId: albumID, photoId: photoID))
         try await check(context)
         guard rows.count == 1, let row = rows.first,
               row.albumId == albumID, row.photoId == photoID else {
@@ -211,10 +200,7 @@ final class SupabaseSocialProfileService: SocialProfileUIService {
     func removePhoto(photoID: UUID, from albumID: UUID) async throws {
         let context = try await requireContext()
         try await requireOwnedAlbum(albumID, context: context)
-        let rows: [AlbumPhotoDTO] = try await gateway.client.from("album_photos")
-            .delete(returning: .representation)
-            .eq("album_id", value: albumID.uuidString)
-            .eq("photo_id", value: photoID.uuidString).execute().value
+        let rows = try await gateway.removeAlbumLink(photoID: photoID, albumID: albumID)
         try await check(context)
         guard rows.count == 1, rows[0].albumId == albumID,
               rows[0].photoId == photoID else { throw SocialUIError.notFound }
@@ -222,35 +208,27 @@ final class SupabaseSocialProfileService: SocialProfileUIService {
 
     func deleteAlbum(id: UUID) async throws {
         let context = try await requireContext()
-        let rows: [AlbumDTO] = try await gateway.client.from("albums")
-            .delete(returning: .representation).eq("id", value: id.uuidString)
-            .eq("owner_id", value: context.userID.uuidString).execute().value
+        let rows = try await gateway.removeOwnedAlbum(id: id, ownerID: context.userID)
         try await check(context)
         guard rows.count == 1, rows[0].id == id else { throw SocialUIError.notFound }
     }
 
     private func currentProfile(context: SessionContext) async throws -> UserProfile? {
-        let rows: [ProfileDTO] = try await gateway.client.from("profiles")
-            .select("id,user_unique_id,display_name,avatar_path")
-            .eq("id", value: context.userID.uuidString).execute().value
+        let rows = try await gateway.socialProfiles(id: context.userID)
         try await check(context)
         guard rows.count <= 1 else { throw SocialUIError.serviceUnavailable }
         return rows.first.map(Self.profile)
     }
 
     private func ownedPhotoTitles(context: SessionContext) async throws -> [UUID: String] {
-        let rows: [OwnedPhotoDTO] = try await gateway.client.from("photos")
-            .select("id,title").eq("owner_id", value: context.userID.uuidString)
-            .execute().value
+        let rows = try await gateway.socialOwnedPhotos(ownerID: context.userID)
         try await check(context)
         return Dictionary(uniqueKeysWithValues: rows.map { ($0.id, $0.title) })
     }
 
     private func albumPhotos(albumID: UUID, context: SessionContext) async throws -> [AlbumPhoto] {
         try await requireOwnedAlbum(albumID, context: context)
-        let links: [AlbumPhotoDTO] = try await gateway.client.from("album_photos")
-            .select("album_id,photo_id,added_at")
-            .eq("album_id", value: albumID.uuidString).execute().value
+        let links = try await gateway.albumLinks(id: albumID)
         try await check(context)
         var result: [AlbumPhoto] = []
         for link in links {
@@ -266,10 +244,7 @@ final class SupabaseSocialProfileService: SocialProfileUIService {
     }
 
     private func requireOwnedAlbum(_ id: UUID, context: SessionContext) async throws {
-        let rows: [AlbumDTO] = try await gateway.client.from("albums")
-            .select("id,owner_id,title,description,created_at")
-            .eq("id", value: id.uuidString).eq("owner_id", value: context.userID.uuidString)
-            .execute().value
+        let rows = try await gateway.ownedAlbum(id: id, ownerID: context.userID)
         try await check(context)
         guard rows.count == 1, rows[0].ownerId == context.userID else {
             throw SocialUIError.notFound
@@ -284,8 +259,7 @@ final class SupabaseSocialProfileService: SocialProfileUIService {
     }
 
     private func optionalVisiblePhoto(_ id: UUID, context: SessionContext) async throws -> OwnedPhotoDTO? {
-        let rows: [OwnedPhotoDTO] = try await gateway.client.from("photos")
-            .select("id,title").eq("id", value: id.uuidString).execute().value
+        let rows = try await gateway.socialVisiblePhoto(id: id)
         try await check(context)
         guard rows.count <= 1 else { throw SocialUIError.serviceUnavailable }
         return rows.first
@@ -319,20 +293,94 @@ final class SupabaseSocialProfileService: SocialProfileUIService {
 }
 
 private struct EmptyRPC: Encodable, Sendable {}
-private struct FriendRequestTimeDTO: Decodable, Sendable {
+struct FriendRequestTimeDTO: Decodable, Sendable {
     let id: UUID
     let createdAt: Date
 }
-private struct OwnedPhotoDTO: Decodable, Sendable {
+struct OwnedPhotoDTO: Decodable, Sendable {
     let id: UUID
     let title: String
 }
-private struct AlbumCreateDTO: Encodable, Sendable {
+struct AlbumCreateDTO: Encodable, Sendable {
     let ownerId: UUID
     let title: String
     let description: String
 }
-private struct AlbumPhotoLinkDTO: Encodable, Sendable {
+struct AlbumPhotoLinkDTO: Encodable, Sendable {
     let albumId: UUID
     let photoId: UUID
+}
+
+// SDKのPostgrestResponseはSendableではない。REST応答をこの非隔離層で値へ変換する。
+extension SupabaseGateway {
+    func friendRequestTimes(addresseeID: UUID) async throws -> [FriendRequestTimeDTO] {
+        try await client.from("friend_requests").select("id,created_at")
+            .eq("addressee_id", value: addresseeID.uuidString)
+            .eq("status", value: "PENDING").execute().value
+    }
+
+    func socialProfiles(id: UUID) async throws -> [ProfileDTO] {
+        try await client.from("profiles")
+            .select("id,user_unique_id,display_name,avatar_path")
+            .eq("id", value: id.uuidString).execute().value
+    }
+
+    func updateSocialProfile(id: UUID, name: String) async throws -> [ProfileDTO] {
+        try await client.from("profiles")
+            .update(["display_name": name], returning: .representation)
+            .eq("id", value: id.uuidString).execute().value
+    }
+
+    func ownedAlbums(ownerID: UUID) async throws -> [AlbumDTO] {
+        try await client.from("albums")
+            .select("id,owner_id,title,description,created_at")
+            .eq("owner_id", value: ownerID.uuidString).execute().value
+    }
+
+    func createOwnedAlbum(_ value: AlbumCreateDTO) async throws -> [AlbumDTO] {
+        try await client.from("albums")
+            .insert(value, returning: .representation).execute().value
+    }
+
+    func removeOwnedAlbum(id: UUID, ownerID: UUID) async throws -> [AlbumDTO] {
+        try await client.from("albums")
+            .delete(returning: .representation).eq("id", value: id.uuidString)
+            .eq("owner_id", value: ownerID.uuidString).execute().value
+    }
+
+    func ownedAlbum(id: UUID, ownerID: UUID) async throws -> [AlbumDTO] {
+        try await client.from("albums")
+            .select("id,owner_id,title,description,created_at")
+            .eq("id", value: id.uuidString)
+            .eq("owner_id", value: ownerID.uuidString).execute().value
+    }
+
+    func albumLinks(id: UUID) async throws -> [AlbumPhotoDTO] {
+        try await client.from("album_photos")
+            .select("album_id,photo_id,added_at")
+            .eq("album_id", value: id.uuidString).execute().value
+    }
+
+    func addAlbumLink(_ value: AlbumPhotoLinkDTO) async throws -> [AlbumPhotoDTO] {
+        try await client.from("album_photos")
+            .insert(value, returning: .representation).execute().value
+    }
+
+    func removeAlbumLink(photoID: UUID, albumID: UUID) async throws -> [AlbumPhotoDTO] {
+        try await client.from("album_photos")
+            .delete(returning: .representation)
+            .eq("album_id", value: albumID.uuidString)
+            .eq("photo_id", value: photoID.uuidString).execute().value
+    }
+
+    func socialOwnedPhotos(ownerID: UUID) async throws -> [OwnedPhotoDTO] {
+        try await client.from("photos")
+            .select("id,title").eq("owner_id", value: ownerID.uuidString)
+            .execute().value
+    }
+
+    func socialVisiblePhoto(id: UUID) async throws -> [OwnedPhotoDTO] {
+        try await client.from("photos")
+            .select("id,title").eq("id", value: id.uuidString).execute().value
+    }
 }
