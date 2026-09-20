@@ -14,7 +14,8 @@ struct MapScreen: View {
     @StateObject private var model: MapScreenModel
     @State private var sheetRoute: MapSheetRoute?
     @State private var selectedPhoto: Photo?
-    @State private var pendingDetailPhoto: Photo?
+    @State private var listSelectedPhoto: Photo?
+    @State private var showsListDetail = false
 
     init(
         isUITesting: Bool = false,
@@ -100,13 +101,7 @@ struct MapScreen: View {
             .onDisappear {
                 model.cancelPendingSearch()
             }
-            .sheet(item: $sheetRoute, onDismiss: {
-                if let photo = pendingDetailPhoto {
-                    pendingDetailPhoto = nil
-                    selectedPhoto = photo
-                    sheetRoute = .detail
-                }
-            }) { route in
+            .sheet(item: $sheetRoute) { route in
                 sheetView(for: route)
             }
         }
@@ -213,33 +208,42 @@ struct MapScreen: View {
             PhotoListScreen(
                 photos: model.visiblePhotos,
                 filter: model.selectedFilter,
-                onSelect: presentDetail(for:)
+                onSelect: { photo in
+                    listSelectedPhoto = photo
+                    showsListDetail = true
+                }
             )
+            .sheet(isPresented: $showsListDetail, onDismiss: {
+                listSelectedPhoto = nil
+            }) {
+                if let listSelectedPhoto {
+                    detail(for: listSelectedPhoto)
+                }
+            }
         case .detail:
             if let selectedPhoto {
-                PhotoDetailScreen(
-                    photo: selectedPhoto,
-                    photoReader: photoReader,
-                    assetLoader: assetLoader,
-                    sessionContext: sessionContext,
-                    existingPhotoRakugakiService: existingPhotoRakugakiService,
-                    onOpenAR: { onPresentRoute(.arPreview) },
-                    photoService: photoService
-                )
+                detail(for: selectedPhoto)
             } else {
                 ContentUnavailableView("map.photo-detail.not-found", systemImage: "photo")
             }
         }
     }
 
+    private func detail(for photo: Photo) -> some View {
+        PhotoDetailScreen(
+            photo: photo,
+            photoReader: photoReader,
+            assetLoader: assetLoader,
+            sessionContext: sessionContext,
+            existingPhotoRakugakiService: existingPhotoRakugakiService,
+            onOpenAR: { onPresentRoute(.arPreview) },
+            photoService: photoService
+        )
+    }
+
     private func presentDetail(for photo: Photo) {
-        if sheetRoute == .list {
-            pendingDetailPhoto = photo
-            sheetRoute = nil
-        } else {
-            selectedPhoto = photo
-            sheetRoute = .detail
-        }
+        selectedPhoto = photo
+        sheetRoute = .detail
     }
 
     private func search(center: GeoPoint) {
