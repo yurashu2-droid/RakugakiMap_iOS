@@ -72,7 +72,7 @@ final class GroupDetailScreenModel: ObservableObject {
         }
     }
 
-    func perform(_ operation: @escaping (any GroupsServing, SessionContext) async throws -> Void,
+    func perform(_ operation: @escaping @MainActor (any GroupsServing, SessionContext) async throws -> Void,
                  exitsGroup: Bool = false) async {
         guard !isWorking else { return }
         isWorking = true

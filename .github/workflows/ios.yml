@@ -58,6 +58,10 @@ jobs:
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
         run: bash scripts/configure-ci-backend.sh
+      - uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: .build/tools/XcodeGen
+          key: xcodegen-2.44.1-xcode-16.4-${{ runner.os }}
       - name: Generate project
         run: bash scripts/generate-project.sh
       - name: Unsigned device build
@@ -105,6 +109,10 @@ jobs:
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
         run: bash scripts/configure-ci-backend.sh
+      - uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: .build/tools/XcodeGen
+          key: xcodegen-2.44.1-xcode-16.4-${{ runner.os }}
       - name: Package unsigned IPA
         run: bash scripts/package-ipa.sh
       - name: iLoader IPA
