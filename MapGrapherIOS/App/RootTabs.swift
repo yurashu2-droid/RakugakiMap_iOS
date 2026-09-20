@@ -3,16 +3,29 @@ import SwiftUI
 @MainActor
 struct RootTabs: View {
     let isUITesting: Bool
+    private let photoReader: any PhotoReading
+    private let locationProvider: any MapLocationProviding
     @StateObject private var router: AppRouter
 
-    init(isUITesting: Bool = false, router: AppRouter? = nil) {
+    init(
+        isUITesting: Bool = false,
+        router: AppRouter? = nil,
+        photoReader: any PhotoReading = FakePhotoReading(),
+        locationProvider: any MapLocationProviding = FakeMapLocationProvider()
+    ) {
         self.isUITesting = isUITesting
+        self.photoReader = photoReader
+        self.locationProvider = locationProvider
         _router = StateObject(wrappedValue: router ?? AppRouter())
     }
 
     var body: some View {
         TabView(selection: $router.selectedTab) {
-            RouteAwareMapScreen(isUITesting: isUITesting) { route in
+            MapScreen(
+                isUITesting: isUITesting,
+                photoReader: photoReader,
+                locationProvider: locationProvider
+            ) { route in
                 router.navigate(to: route)
             }
             .tag(AppRoute.Tab.map)
@@ -72,59 +85,6 @@ struct RootTabs: View {
         default:
             EmptyView()
         }
-    }
-}
-
-@MainActor
-private struct RouteAwareMapScreen: View {
-    let isUITesting: Bool
-    let navigate: (AppRoute) -> Void
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: AppSpacing.xLarge) {
-                    PrototypeNotice(message: AppStrings.backendNotice)
-
-                    VStack(alignment: .leading, spacing: AppSpacing.small) {
-                        Text(AppStrings.mapPreviewTitle)
-                            .font(.title2.weight(.semibold))
-                            .foregroundStyle(AppColors.ink)
-                        Text(AppStrings.mapPreviewDetail)
-                            .font(.body)
-                            .foregroundStyle(AppColors.ink.opacity(0.78))
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    PrimaryButton {
-                        navigate(.arPreview)
-                    } label: {
-                        Label(AppStrings.arPreviewButton, systemImage: "arkit")
-                    }
-                    .accessibilityIdentifier("map.ar-preview.button")
-                    .accessibilityLabel(Text(AppStrings.arPreviewButton))
-
-                    PrimaryButton {
-                        navigate(.postComposer)
-                    } label: {
-                        Label("route.post.button", systemImage: "camera.fill")
-                    }
-                    .accessibilityIdentifier("map.post.button")
-
-                    PrototypePlaceholderCard(
-                        title: AppStrings.mapPlaceholderTitle,
-                        detail: AppStrings.mapPlaceholderDetail
-                    )
-                }
-                .padding(AppSpacing.xLarge)
-            }
-            .background(AppColors.paper.ignoresSafeArea())
-            .navigationTitle(AppStrings.map)
-            .navigationBarTitleDisplayMode(.inline)
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("screen.map")
-        .accessibilityLabel(Text(AppStrings.map))
     }
 }
 

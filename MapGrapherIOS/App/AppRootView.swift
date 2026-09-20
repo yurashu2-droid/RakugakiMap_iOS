@@ -9,7 +9,7 @@ struct AppRootView: View {
     var body: some View {
         Group {
             if let container {
-                SessionRootView(session: container.session)
+                SessionRootView(container: container)
             } else if configurationFailed {
                 ContentUnavailableView(
                     "接続設定がありません",
@@ -46,14 +46,17 @@ struct AppRootView: View {
 
 @MainActor
 private struct SessionRootView: View {
-    let session: SessionController
+    let container: AppContainer
+
+    private var session: SessionController { container.session }
 
     var body: some View {
         switch session.state {
         case .restoring:
             ProgressView("ログイン状態を確認しています")
         case .authenticated:
-            RootTabs()
+            RootTabs(photoReader: container.photoReader,
+                     locationProvider: container.mapLocationProvider)
         case .signedOut, .awaitingEmailConfirmation, .reauthenticationRequired:
             WelcomeScreen(service: SessionAuthUIAdapter(session: session))
         }

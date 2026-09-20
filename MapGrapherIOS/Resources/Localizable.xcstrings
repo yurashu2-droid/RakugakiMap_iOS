@@ -605,6 +605,457 @@
           }
         }
       }
+    },
+    "map.filter.all" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すべて"
+          }
+        }
+      }
+    },
+    "map.filter.friends" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "友達限定"
+          }
+        }
+      }
+    },
+    "map.filter.recent" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "24時間"
+          }
+        }
+      }
+    },
+    "map.photo-list.open" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真一覧を開く"
+          }
+        }
+      }
+    },
+    "map.photo-list.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真一覧"
+          }
+        }
+      }
+    },
+    "map.photo-list.empty" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この条件の写真はありません。"
+          }
+        }
+      }
+    },
+    "map.photo-list.author" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "投稿者"
+          }
+        }
+      }
+    },
+    "map.content.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "近くの写真"
+          }
+        }
+      }
+    },
+    "map.content.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ピンを選ぶか、一覧から写真を開けます。"
+          }
+        }
+      }
+    },
+    "map.filter.empty.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "条件に合う写真がありません"
+          }
+        }
+      }
+    },
+    "map.filter.empty.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "別のフィルターを選ぶと、表示できる写真を確認できます。"
+          }
+        }
+      }
+    },
+    "map.loading" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真を読み込んでいます"
+          }
+        }
+      }
+    },
+    "map.loading.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "近くの投稿を確認しています。"
+          }
+        }
+      }
+    },
+    "map.empty.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "近くに写真がありません"
+          }
+        }
+      }
+    },
+    "map.empty.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地図を移動するか、写真を投稿してみてください。"
+          }
+        }
+      }
+    },
+    "map.refresh" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新"
+          }
+        }
+      }
+    },
+    "map.location.loading" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "位置情報を確認しています"
+          }
+        }
+      }
+    },
+    "map.location.loading.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地図は表示したまま、近くの投稿を探します。"
+          }
+        }
+      }
+    },
+    "map.location.unavailable.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "現在地を取得できません"
+          }
+        }
+      }
+    },
+    "map.location.unavailable.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地図は使えます。位置情報が有効になると近くの投稿を表示します。"
+          }
+        }
+      }
+    },
+    "map.location.permission.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "位置情報が許可されていません"
+          }
+        }
+      }
+    },
+    "map.location.permission.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定を確認すると、近くの写真を探せます。"
+          }
+        }
+      }
+    },
+    "map.location.retry" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "位置情報を再確認"
+          }
+        }
+      }
+    },
+    "map.offline.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オフラインです"
+          }
+        }
+      }
+    },
+    "map.offline.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通信が戻ったら、近くの投稿を更新できます。"
+          }
+        }
+      }
+    },
+    "map.error.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真を読み込めませんでした"
+          }
+        }
+      }
+    },
+    "map.error.detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "時間を置いて、もう一度お試しください。"
+          }
+        }
+      }
+    },
+    "map.photo-detail.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真の詳細"
+          }
+        }
+      }
+    },
+    "map.photo-detail.author" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "投稿者"
+          }
+        }
+      }
+    },
+    "map.photo-detail.asset-pending" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画像を準備しています"
+          }
+        }
+      }
+    },
+    "map.photo-detail.actions" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この投稿でできること"
+          }
+        }
+      }
+    },
+    "map.photo-detail.permission-denied" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この投稿を表示・編集する権限がありません。"
+          }
+        }
+      }
+    },
+    "map.photo-detail.not-found" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この投稿は削除されたか、見つかりません。"
+          }
+        }
+      }
+    },
+    "map.photo-detail.offline" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通信できないため、権限を確認できません。"
+          }
+        }
+      }
+    },
+    "map.rakugaki-list.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ラクガキ履歴"
+          }
+        }
+      }
+    },
+    "map.rakugaki-list.empty" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "まだラクガキはありません。"
+          }
+        }
+      }
+    },
+    "map.rakugaki.status.pending" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "承認待ち"
+          }
+        }
+      }
+    },
+    "map.rakugaki.status.approved" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "公開済み"
+          }
+        }
+      }
+    },
+    "map.rakugaki.status.rejected" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "非承認"
+          }
+        }
+      }
+    },
+    "photo.draw" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "描く"
+          }
+        }
+      }
+    },
+    "photo.ar" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ARで見る"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

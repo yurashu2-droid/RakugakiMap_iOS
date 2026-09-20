@@ -7,15 +7,21 @@ final class AppContainer {
     let session: SessionController
     let assetResolver: SupabaseAssetResolver
     let assetLoader: PrivateAssetLoader
+    let photoReader: SupabasePhotoReader
+    let mapLocationProvider: MapLocationAdapter
 
     init(gateway: SupabaseGateway) {
         let createdSession = SessionController(auth: SupabaseAuthRepository(client: gateway.client))
         let createdResolver = SupabaseAssetResolver(client: gateway.client, session: createdSession)
         let createdLoader = PrivateAssetLoader(resolver: createdResolver, session: createdSession)
+        let createdPhotoReader = SupabasePhotoReader(gateway: gateway, session: createdSession)
+        let createdMapLocationProvider = MapLocationAdapter()
         self.gateway = gateway
         session = createdSession
         assetResolver = createdResolver
         assetLoader = createdLoader
+        photoReader = createdPhotoReader
+        mapLocationProvider = createdMapLocationProvider
         createdSession.onInvalidation = { [weak createdLoader] context in
             await createdLoader?.invalidate(context: context)
         }

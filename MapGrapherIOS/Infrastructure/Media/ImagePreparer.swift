@@ -23,7 +23,7 @@ struct ImagePreparer: Sendable {
         let directory = outputDirectory
         let work = Task.detached(priority: .userInitiated) {
             try Task.checkCancellation()
-            try Self.prepareSynchronously(input: input, outputDirectory: directory)
+            return try Self.prepareSynchronously(input: input, outputDirectory: directory)
         }
         return try await withTaskCancellationHandler {
             let prepared = try await work.value
