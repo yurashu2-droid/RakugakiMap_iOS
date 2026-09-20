@@ -1,10 +1,10 @@
 # T02 ARローカル試作・G1実機検証
 
-状態: ローカルAR試作を実装済み。Simulatorテストと実機操作は未実施。G1は未判定。
+状態: ローカルAR試作を実装済み。b874aabのCIでdevice build、Simulator単体8件・UI3件成功。実機操作は未実施。G1は未判定。
 
 ## テスト用の公開境界
 
-`MapGrapherIOSTests/ARPlaneGeometryTests.swift` はアプリモジュールの次の純粋計算を指定する。実装前のREDはGitHub Actionsで確認済み。実装後のGREENは未確認。
+`MapGrapherIOSTests/ARPlaneGeometryTests.swift` はアプリモジュールの次の純粋計算を指定する。実装前のREDと実装後7件のGREENをGitHub Actionsで確認済み。
 
 ```swift
 struct ARPlaneGeometry {
@@ -17,6 +17,8 @@ struct ARPlaneGeometry {
 ピクセル幅・高さは正のfinite値、表示幅は0.1〜10m。高さは画像の縦横比から求める。計算結果が0または非finiteになる入力を拒否する。fixtureは実行時にCoreGraphicsで生成する透明な1000×500px画像で、上向き矢印と左上の丸を持つ。表示幅1mなら高さ0.5m。ARKit/RealityKitと画像デコードの成否はこの単体テストでは判定しない。
 
 配置は検出済み平面へのraycast結果から`ARPlaneAnchor`を要求する。Appleの[ARPlaneAnchor座標系](https://developer.apple.com/documentation/arkit/arplaneanchor)に合わせ、平面の回転とXZ面・Y法線を使い、位置だけraycast交点へ置き換える。透過板は同じXZ面に生成する。水平・垂直とも独自の90度回転は加えない。見た目と追跡の成否はA04/A05で実機確認する。
+
+iOS 17では素材の既定の表面表示を使う。iOS 18以降は`faceCulling = .none`で裏側からも表示する。実機記録ではOSと観察側を記録し、表面が床・壁の観察側へ向いていることを確認する。
 
 ## 実行前に記録する項目
 
@@ -53,5 +55,7 @@ Macでは`IOS_SIMULATOR_ID`に実在するUDIDを設定して`bash scripts/verif
 | A13 | 配置後にsnapshotを作る | 返却画像にARの板と背景が含まれ、カメラの向きと縦横比が正しい | 未実施 | — |
 | A14 | snapshot画像を共有シートで写真共有する | 利用者操作で共有でき、AR driverが写真ライブラリへ直接書き込まない | 未実施 | — |
 | A15 | AR非対応状態を模擬または対応外端末で確認する | 開始前に理由と戻る導線を示し、カメラ上の2D画像で代用しない | 未実施 | — |
+| A16 | 写真共有を連打し、撮影中に停止・戻る・タブ切替・backgroundへ移す | 多重撮影や退出後の古い共有表示がなく、再入場して撮影できる | 未実施 | — |
+| A17 | 共有シートから写真保存を選び、許可・拒否を確認する | 日本語の用途説明が示され、拒否してもクラッシュしない | 未実施 | — |
 
-G1判定はA01〜A14の実機結果と、機種・OS・commit・証拠が揃った時に行う。A15は対応外環境の経路として別に記録する。技術的失敗はFAILとし、方式を再設計してから再試験する。サーバー素材・位置ゲート・Androidとの共有anchorはT02の対象外。
+G1判定はA01〜A14・A16・A17の実機結果と、機種・OS・commit・証拠が揃った時に行う。A15は対応外環境の経路として別に記録する。技術的失敗はFAILとし、方式を再設計してから再試験する。サーバー素材・位置ゲート・Androidとの共有anchorはT02の対象外。

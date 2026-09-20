@@ -23,3 +23,16 @@
 - run 35514864399: Core 37件中、登録工程からuploadへ戻る追加回帰1件で2assert失敗。進行コピーにも工程後退禁止を適用した。
 - [run 35515352880](https://github.com/yurashu2-droid/RakugakiMap_iOS/actions/runs/35515352880): Core 37件成功。iOSはAppIcon asset不足でdevice build失敗、unit/UI/IPAは未実行。アイコン不足を修正する。
 - 統合レビューで写真共有の保存経路に必要な用途説明と、snapshot完了時の退出・停止判定不足を検出。写真追加の日本語説明と撮影要求の無効化を修正する。実機での撮影中退出・連打も確認対象に加える。
+- c1c7bb3の撮影取消し・用途説明の修正は静的再レビュー承認。run 35515657934ではAppIcon不足は解消し、続いてRealityKitのfaceCullingがiOS 18以降であるためコンパイル失敗。7270be4でavailability guardを適用した。
+- [run 35515877735](https://github.com/yurashu2-droid/RakugakiMap_iOS/actions/runs/35515877735): Core 37件、実機向けunsigned build、Simulator unit 8件、AR画面へのUI遷移1件成功。タブUI 2件は独自identifierが見つからず失敗。exportしたUI hierarchyでは4タブの日本語ラベルと選択状態を確認でき、独自identifierがUITabBarButtonへ伝播しないことを確認。b874aabで標準タブの日本語ラベルを使う検証へ変更し、タブ数・画面ID・選択状態の確認を維持した。契約変更はUI_TEST_CONTRACT.mdへ記録した。
+
+## 初回実機用IPAの検証結果
+
+- ソース: `b874aabdc036681ca2a43947914aa735d67e5fc2`。後続の記録文書更新はこのIPAに含まれない。
+- [run 35516367757](https://github.com/yurashu2-droid/RakugakiMap_iOS/actions/runs/35516367757)は全ジョブ成功。Core 37件、Simulator unit 8件、UI 3件（計48件）成功。Debugのunsigned device build、Release archive、IPA作成も成功。
+- Xcode 16.4 / Swift 6 / iOS 18.5 Simulator。iOS 17 deployment targetでコンパイル済みだが、iOS 17での実機実行を認定するものではない。
+- 起動画面のスクリーンショットを目視確認。日本語4タブ、試作表示、AR動作確認ボタンに文字欠けや重なりなし。全画面・全端末・Dynamic Typeの網羅検証ではない。
+- [IPA artifact](https://github.com/yurashu2-droid/RakugakiMap_iOS/actions/runs/35516367757/artifacts/10606884052)をWindowsへ取得し、ZIP整合性と同梱SHA256の一致を確認。`Payload/MapGrapherIOS.app`、arm64 Mach-O、iPhoneOS、最小OS 17.0、日本語Camera/PhotoLibraryAdd用途説明を確認。embedded provisioning profileなし、署名はiLoader側で行う。
+- IPA SHA256: `a616dec280a93a1fbb88992ad7c27d8909e407b1d5af6b03886845913276d1f6`。
+- 現在の成果はCore型・ルールとPorts、4タブの試作、ローカルAR試作、CI/IPA生成。T00のSupabase SDKはT03へ繰越、T01の公開型実装済み、T02はG1実機待ち。T03以降のSupabase adapter、認証、地図データ、投稿などは未実装。
+- iLoader導入、iPhoneでの起動、AR実機、G1は未確認。AR_PROBE.mdの実測記録が揃うまでAR成立・移植完了とは扱わない。
