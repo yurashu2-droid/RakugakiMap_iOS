@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="MapGrapherStoreV1">
+    <entity name="SubmissionRecord" representedClassName="NSManagedObject" syncable="YES" codeGenerationType="manual/none">
+        <attribute name="createdAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="NO" attributeType="String"/>
+        <attribute name="leaseExpiresAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="leaseOwner" optional="YES" attributeType="String"/>
+        <attribute name="ownerID" optional="NO" attributeType="String" indexed="YES"/>
+        <attribute name="remoteID" optional="YES" attributeType="String"/>
+        <attribute name="snapshot" optional="NO" attributeType="Binary"/>
+        <attribute name="state" optional="NO" attributeType="String"/>
+        <uniquenessConstraints>
+            <uniquenessConstraint>
+                <constraint value="id"/>
+            </uniquenessConstraint>
+        </uniquenessConstraints>
+    </entity>
+    <elements>
+        <element name="SubmissionRecord" positionX="-63" positionY="-18" width="128" height="180"/>
+    </elements>
+</model>

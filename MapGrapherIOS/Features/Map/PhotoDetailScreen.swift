@@ -56,22 +56,24 @@ struct PhotoDetailScreen: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: AppSpacing.xLarge) {
-                    PhotoHeroView(photo: photo)
+                    if canView {
+                        PhotoHeroView(photo: photo)
 
-                    VStack(alignment: .leading, spacing: AppSpacing.small) {
-                        Text(photo.title)
-                            .font(.title2.weight(.bold))
-                            .foregroundStyle(AppColors.ink)
-                        Text("map.photo-detail.author")
-                            .font(.subheadline)
-                            .foregroundStyle(AppColors.ink.opacity(0.70))
-                        Text(photo.createdAt, style: .relative)
-                            .font(.caption)
-                            .foregroundStyle(AppColors.ink.opacity(0.62))
+                        VStack(alignment: .leading, spacing: AppSpacing.small) {
+                            Text(photo.title)
+                                .font(.title2.weight(.bold))
+                                .foregroundStyle(AppColors.ink)
+                            Text("map.photo-detail.author")
+                                .font(.subheadline)
+                                .foregroundStyle(AppColors.ink.opacity(0.70))
+                            Text(photo.createdAt, style: .relative)
+                                .font(.caption)
+                                .foregroundStyle(AppColors.ink.opacity(0.62))
+                        }
                     }
 
                     permissionSection
-                    rakugakiSection
+                    if canView { rakugakiSection }
                 }
                 .padding(.horizontal, AppSpacing.xLarge)
                 .padding(.vertical, AppSpacing.large)

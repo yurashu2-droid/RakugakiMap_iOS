@@ -62,7 +62,6 @@ final class MapScreenModel: ObservableObject {
     private let locationProvider: any MapLocationProviding
     private let now: () -> Date
     private var requestGeneration = 0
-    private var searchCache: [SearchKey: [Photo]] = [:]
     private(set) var lastSearchCenter: GeoPoint?
 
     init(
@@ -78,13 +77,13 @@ final class MapScreenModel: ObservableObject {
     var visiblePhotos: [Photo] {
         switch selectedFilter {
         case .all:
-            photos
+            return photos
         case .friends:
             // 閲覧権限はサーバーを正とし、この絞り込みは公開範囲だけを対象にする。
-            photos.filter { $0.visibility == .friends }
+            return photos.filter { $0.visibility == .friends }
         case .recent24Hours:
             let cutoff = now().addingTimeInterval(-24 * 60 * 60)
-            photos.filter { $0.createdAt >= cutoff && $0.createdAt <= now() }
+            return photos.filter { $0.createdAt >= cutoff && $0.createdAt <= now() }
         }
     }
 
@@ -95,6 +94,7 @@ final class MapScreenModel: ObservableObject {
     func start() async {
         requestGeneration &+= 1
         let generation = requestGeneration
+        photos = []
         state = .locating
 
         let locationState = await locationProvider.requestCurrentLocation()
@@ -128,18 +128,12 @@ final class MapScreenModel: ObservableObject {
         requestGeneration &+= 1
         let generation = requestGeneration
         lastSearchCenter = center
-        let cacheKey = SearchKey(center: center, radiusM: radiusM)
-        if let cached = searchCache[cacheKey] {
-            photos = cached
-            state = cached.isEmpty ? .empty : .content
-        } else {
-            state = .loading
-        }
+        photos = []
+        state = .loading
 
         do {
             let result = try await photoReader.nearby(center: center, radiusM: radiusM)
             guard generation == requestGeneration else { return }
-            searchCache[cacheKey] = result
             photos = result
             state = result.isEmpty ? .empty : .content
         } catch let error as PhotoReadingError {
@@ -148,18 +142,6 @@ final class MapScreenModel: ObservableObject {
         } catch {
             guard generation == requestGeneration else { return }
             state = .error
-        }
-    }
-
-    private struct SearchKey: Hashable {
-        let latitudeE5: Int
-        let longitudeE5: Int
-        let radiusM: Int
-
-        init(center: GeoPoint, radiusM: Double) {
-            latitudeE5 = Int((center.latitude * 100_000).rounded())
-            longitudeE5 = Int((center.longitude * 100_000).rounded())
-            self.radiusM = Int(radiusM.rounded())
         }
     }
 

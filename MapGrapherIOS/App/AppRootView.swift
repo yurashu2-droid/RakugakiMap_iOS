@@ -57,6 +57,7 @@ private struct SessionRootView: View {
         case .authenticated:
             RootTabs(photoReader: container.photoReader,
                      locationProvider: container.mapLocationProvider)
+                .id(session.context?.epoch)
         case .signedOut, .awaitingEmailConfirmation, .reauthenticationRequired:
             WelcomeScreen(service: SessionAuthUIAdapter(session: session))
         }
