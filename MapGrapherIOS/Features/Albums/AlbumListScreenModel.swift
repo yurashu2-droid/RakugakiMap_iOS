@@ -1,4 +1,5 @@
 import Combine
+import Foundation
 
 @MainActor
 final class AlbumListScreenModel: ObservableObject {
