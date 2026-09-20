@@ -26,6 +26,7 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: RakugakiMap
         INFOPLIST_KEY_NSCameraUsageDescription: 現地でラクガキをAR表示するためにカメラを使います。
+        INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription: 共有メニューで選んだAR写真を写真ライブラリに保存します。
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
         CURRENT_PROJECT_VERSION: 1

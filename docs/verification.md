@@ -20,3 +20,6 @@
 - [run 35514451027](https://github.com/yurashu2-droid/RakugakiMap_iOS/actions/runs/35514451027): ARPlaneGeometry未実装のRED確認。UIは3件を実行し、空画面のscreen.map/tab.groups不足で期待通り3件失敗。T01残りのドメイン型も未定義のRED確認済み。
 - T01実装の静的レビューで登録工程からuploadへ戻れる進行コピーを検出し、回帰テストを追加してCIのRED確認へ送付した。
 - ユーザー回答: iPhoneあり、Macなし、Apple Developer Program未加入、iLoaderで導入する。Ruling: 現段階の実機導入はTestFlightではなく、検証成功後の署名前IPAをArtifactsへ出し、本人のiLoaderで署名する。Appleへのuploadはしない。
+- run 35514864399: Core 37件中、登録工程からuploadへ戻る追加回帰1件で2assert失敗。進行コピーにも工程後退禁止を適用した。
+- [run 35515352880](https://github.com/yurashu2-droid/RakugakiMap_iOS/actions/runs/35515352880): Core 37件成功。iOSはAppIcon asset不足でdevice build失敗、unit/UI/IPAは未実行。アイコン不足を修正する。
+- 統合レビューで写真共有の保存経路に必要な用途説明と、snapshot完了時の退出・停止判定不足を検出。写真追加の日本語説明と撮影要求の無効化を修正する。実機での撮影中退出・連打も確認対象に加える。

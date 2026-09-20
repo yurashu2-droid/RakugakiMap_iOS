@@ -11,6 +11,9 @@ struct ARProbeScreen: View {
     @StateObject private var driver = ARSessionDriver()
     @State private var sharePayload: ARSharePayload?
     @State private var snapshotError: String?
+    @State private var captureTask: Task<Void, Never>?
+    @State private var captureGeneration = 0
+    @State private var isCapturing = false
 
     init(isUITesting: Bool) {
         self.isUITesting = isUITesting
@@ -61,9 +64,12 @@ struct ARProbeScreen: View {
                             .disabled(!driver.hasPlacement)
                         Spacer()
                         Button("写真を共有") { captureAndShare() }
-                            .disabled(!driver.isRunning)
+                            .disabled(!driver.isRunning || isCapturing)
                     }
-                    Button("ARを停止") { driver.pause() }
+                    Button("ARを停止") {
+                        cancelCapture()
+                        driver.pause()
+                    }
                 } else if !driver.unsupported {
                     Button("ARを開始") {
                         snapshotError = nil
@@ -74,6 +80,7 @@ struct ARProbeScreen: View {
             }
 
             Button("戻る") {
+                cancelCapture()
                 driver.pause()
                 dismiss()
             }
@@ -89,22 +96,57 @@ struct ARProbeScreen: View {
             driver.setSceneActive(scenePhase == .active, cancelPending: scenePhase == .background)
         }
         .onChange(of: scenePhase) { _, phase in
+            if phase != .active {
+                cancelCapture()
+            }
             driver.setSceneActive(phase == .active, cancelPending: phase == .background)
         }
+        .onChange(of: driver.isRunning) { _, running in
+            if !running {
+                cancelCapture()
+            }
+        }
         .onDisappear {
+            cancelCapture()
             driver.pause()
         }
     }
 
     private func captureAndShare() {
-        Task {
+        guard !isCapturing, driver.isRunning else { return }
+        isCapturing = true
+        snapshotError = nil
+        captureGeneration &+= 1
+        let generation = captureGeneration
+        captureTask = Task {
+            defer {
+                if generation == captureGeneration {
+                    isCapturing = false
+                    captureTask = nil
+                }
+            }
             do {
                 let image = try await driver.snapshot()
+                guard !Task.isCancelled,
+                      generation == captureGeneration,
+                      driver.isRunning,
+                      scenePhase == .active else { return }
                 sharePayload = ARSharePayload(image: image)
             } catch {
+                guard !Task.isCancelled,
+                      generation == captureGeneration,
+                      driver.isRunning,
+                      scenePhase == .active else { return }
                 snapshotError = "写真を作成できませんでした。再試行してください。"
             }
         }
+    }
+
+    private func cancelCapture() {
+        captureGeneration &+= 1
+        captureTask?.cancel()
+        captureTask = nil
+        isCapturing = false
     }
 }
 

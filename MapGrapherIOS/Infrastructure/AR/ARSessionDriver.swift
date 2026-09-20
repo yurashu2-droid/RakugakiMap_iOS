@@ -171,10 +171,21 @@ final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
     }
 
     func snapshot() async throws -> UIImage {
-        guard isRunning, let arView else {
+        guard isRunning, isSceneActive, let arView else {
             throw ARSnapshotError.imageUnavailable
         }
-        return try await ARSnapshotWriter.capture(from: arView)
+        let generation = startGeneration
+        let sessionIdentifier = ObjectIdentifier(arView.session)
+        let image = try await ARSnapshotWriter.capture(from: arView)
+        guard !Task.isCancelled,
+              generation == startGeneration,
+              isRunning,
+              isSceneActive,
+              self.arView === arView,
+              isCurrentSession(sessionIdentifier) else {
+            throw ARSnapshotError.cancelled
+        }
+        return image
     }
 
     nonisolated func session(_ session: ARSession, cameraDidChangeTrackingState camera: ARCamera) {
