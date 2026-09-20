@@ -118,6 +118,48 @@ final class RealPostingUIServiceTests: XCTestCase {
         XCTAssertTrue(rows.isEmpty)
     }
 
+    func testOneTapARPostRegistersPhotoDrawingAndExperienceInOrder() async throws {
+        let fixture = try makeFixture()
+        defer { try? FileManager.default.removeItem(at: fixture.root) }
+        let prepared = try await fixture.service.prepareImage(
+            data: FakePostingUIService.fixtureImageData(), suggestedFilename: "camera.png")
+        var draft = PostingDraft()
+        draft.preparedImage = prepared
+        draft.title = "AR写真"
+        draft.location = GeoPoint(latitude: 35, longitude: 139)
+        draft.drawing = sampleDrawing(width: prepared.prepared.pixelWidth,
+                                      height: prepared.prepared.pixelHeight)
+        draft.reserveAR = true
+
+        try await fixture.service.saveDraft(draft)
+        let rows = try await fixture.store.listPending(ownerID: fixture.context.userID)
+        XCTAssertEqual(Set(rows.map(\.kind)), Set([.photo, .rakugaki, .ar]))
+        let drawing = try XCTUnwrap(rows.first { $0.kind == .rakugaki })
+        let ar = try XCTUnwrap(rows.first { $0.kind == .ar })
+        XCTAssertEqual(drawing.dependsOn, draft.id)
+        XCTAssertEqual(ar.dependsOn, drawing.id)
+        let payload = try JSONDecoder().decode(SubmissionPayload.self, from: ar.payloadData)
+        guard case let .ar(settings) = payload else { return XCTFail("AR設定が必要です") }
+        XCTAssertEqual(settings.targetPhotoOperationID, draft.id)
+        XCTAssertEqual(settings.unlockRadiusM, 50)
+        XCTAssertEqual(settings.discoveryRadiusM, 150)
+        XCTAssertEqual(settings.displayWidthM, 1)
+
+        let result = try await fixture.service.submit(draft)
+        XCTAssertEqual(result.state, .completed)
+        XCTAssertEqual(result.remotePhotoID, draft.id)
+        let calls = await fixture.transport.calls
+        XCTAssertEqual(calls.requests, [draft.id, drawing.id, ar.id])
+    }
+
+    private func sampleDrawing(width: Int, height: Int) -> DrawingDocument {
+        let stroke = DrawingStroke(id: UUID(), brush: .pen,
+            color: DrawingColor(red: 1, green: 0, blue: 0, alpha: 1)!,
+            width: 4, opacity: 1,
+            points: [DrawingPoint(x: 16, y: 16)!], randomSeed: 123)!
+        return DrawingDocument(pixelWidth: width, pixelHeight: height, strokes: [stroke])!
+    }
+
     func testMissionAnswerWaitsForPhotoAndCompletesThroughJournal() async throws {
         let fixture = try makeFixture()
         defer { try? FileManager.default.removeItem(at: fixture.root) }
