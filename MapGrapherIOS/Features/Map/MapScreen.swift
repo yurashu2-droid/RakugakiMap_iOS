@@ -6,6 +6,7 @@ struct MapScreen: View {
     let isUITesting: Bool
     let onPresentRoute: (AppRoute) -> Void
     private let photoReader: any PhotoReading
+    private let photoRakugakiReader: any PhotoRakugakiReading
     private let assetLoader: PrivateAssetLoader?
     private let sessionContext: SessionContext?
     private let photoService: any PhotoDetailUIService
@@ -20,6 +21,7 @@ struct MapScreen: View {
     init(
         isUITesting: Bool = false,
         photoReader: any PhotoReading = FakePhotoReading(),
+        photoRakugakiReader: any PhotoRakugakiReading = FakePhotoRakugakiReader(),
         locationProvider: any MapLocationProviding = FakeMapLocationProvider(),
         assetLoader: PrivateAssetLoader? = nil,
         sessionContext: SessionContext? = nil,
@@ -30,6 +32,7 @@ struct MapScreen: View {
         self.isUITesting = isUITesting
         self.onPresentRoute = onPresentRoute
         self.photoReader = photoReader
+        self.photoRakugakiReader = photoRakugakiReader
         self.assetLoader = assetLoader
         self.sessionContext = sessionContext
         self.existingPhotoRakugakiService = existingPhotoRakugakiService
@@ -253,6 +256,7 @@ struct MapScreen: View {
         PhotoDetailScreen(
             photo: photo,
             photoReader: photoReader,
+            rakugakiReader: photoRakugakiReader,
             assetLoader: assetLoader,
             sessionContext: sessionContext,
             existingPhotoRakugakiService: existingPhotoRakugakiService,

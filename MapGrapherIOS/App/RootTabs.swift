@@ -5,6 +5,7 @@ import MapGrapherCore
 struct RootTabs: View {
     let isUITesting: Bool
     private let photoReader: any PhotoReading
+    private let photoRakugakiReader: any PhotoRakugakiReading
     private let locationProvider: any MapLocationProviding
     private let assetLoader: PrivateAssetLoader?
     private let sessionContext: SessionContext?
@@ -22,6 +23,7 @@ struct RootTabs: View {
         isUITesting: Bool = false,
         router: AppRouter? = nil,
         photoReader: any PhotoReading = FakePhotoReading(),
+        photoRakugakiReader: any PhotoRakugakiReading = FakePhotoRakugakiReader(),
         locationProvider: any MapLocationProviding = FakeMapLocationProvider(),
         assetLoader: PrivateAssetLoader? = nil,
         sessionContext: SessionContext? = nil,
@@ -36,6 +38,7 @@ struct RootTabs: View {
     ) {
         self.isUITesting = isUITesting
         self.photoReader = photoReader
+        self.photoRakugakiReader = photoRakugakiReader
         self.locationProvider = locationProvider
         self.assetLoader = assetLoader
         self.sessionContext = sessionContext
@@ -55,6 +58,7 @@ struct RootTabs: View {
             MapScreen(
                 isUITesting: isUITesting,
                 photoReader: photoReader,
+                photoRakugakiReader: photoRakugakiReader,
                 locationProvider: locationProvider,
                 assetLoader: assetLoader,
                 sessionContext: sessionContext,

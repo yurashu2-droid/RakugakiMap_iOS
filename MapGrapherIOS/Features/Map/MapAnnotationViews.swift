@@ -42,7 +42,8 @@ final class PlayerAnnotationView: MKAnnotationView {
 
 @MainActor
 final class PhotoPinAnnotationView: MKAnnotationView {
-    private static let size = CGSize(width: 60, height: 70)
+    // 元画像458×710の縦横比を保ち、円窓とピン先端を地図座標に合わせる。
+    private static let size = CGSize(width: 60, height: 93)
     private let preview = UIImageView()
     private let frameImage = UIImageView(image: UIImage(named: "AndroidPhotoPin"))
     private var representedPhotoID: UUID?
@@ -51,15 +52,15 @@ final class PhotoPinAnnotationView: MKAnnotationView {
     override init(annotation: (any MKAnnotation)?, reuseIdentifier: String?) {
         super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
         bounds = CGRect(origin: .zero, size: Self.size)
-        centerOffset = CGPoint(x: 0, y: -Self.size.height / 2)
-        preview.frame = CGRect(x: 8, y: 7, width: 44, height: 44)
+        centerOffset = CGPoint(x: 0, y: -30)
+        preview.frame = CGRect(x: 11, y: 11, width: 38, height: 38)
         preview.contentMode = .scaleAspectFill
         preview.clipsToBounds = true
-        preview.layer.cornerRadius = 22
+        preview.layer.cornerRadius = 19
         preview.backgroundColor = UIColor(named: "AppPaper")
         addSubview(preview)
         frameImage.frame = bounds
-        frameImage.contentMode = .scaleToFill
+        frameImage.contentMode = .scaleAspectFit
         addSubview(frameImage)
         canShowCallout = false
         isAccessibilityElement = true
@@ -86,7 +87,7 @@ final class PhotoPinAnnotationView: MKAnnotationView {
         let photoID = photo.id
         loadTask = Task { @MainActor [weak self] in
             guard let image = try? await assetLoader.load(
-                asset: asset, targetPixelSize: CGSize(width: 88, height: 88), context: context
+                asset: asset, targetPixelSize: CGSize(width: 76, height: 76), context: context
             ), !Task.isCancelled, self?.representedPhotoID == photoID else { return }
             self?.preview.image = image
         }

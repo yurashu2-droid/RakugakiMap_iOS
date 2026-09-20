@@ -8,6 +8,7 @@ final class AppContainer {
     let assetResolver: SupabaseAssetResolver
     let assetLoader: PrivateAssetLoader
     let photoReader: SupabasePhotoReader
+    let photoRakugakiReader: SupabasePhotoRakugakiReader
     let mapLocationProvider: MapLocationAdapter
     let arRepository: ARRepository
     let groupsService: SupabaseGroupsService
@@ -21,6 +22,8 @@ final class AppContainer {
         let createdResolver = SupabaseAssetResolver(client: gateway.client, session: createdSession)
         let createdLoader = PrivateAssetLoader(resolver: createdResolver, session: createdSession)
         let createdPhotoReader = SupabasePhotoReader(gateway: gateway, session: createdSession)
+        let createdPhotoRakugakiReader = SupabasePhotoRakugakiReader(
+            gateway: gateway, session: createdSession)
         let createdMapLocationProvider = MapLocationAdapter()
         let createdARRepository = ARRepository(gateway: gateway, photos: createdPhotoReader,
                                                session: createdSession)
@@ -33,6 +36,7 @@ final class AppContainer {
         assetResolver = createdResolver
         assetLoader = createdLoader
         photoReader = createdPhotoReader
+        photoRakugakiReader = createdPhotoRakugakiReader
         mapLocationProvider = createdMapLocationProvider
         arRepository = createdARRepository
         groupsService = createdGroupsService

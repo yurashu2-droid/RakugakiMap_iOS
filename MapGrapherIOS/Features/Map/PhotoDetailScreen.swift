@@ -3,25 +3,6 @@ import SwiftUI
 import UIKit
 import MapGrapherCore
 
-struct RakugakiSummary: Identifiable, Equatable, Sendable {
-    let id: UUID
-    let authorName: String
-    let status: ApprovalStatus
-    let createdAt: Date
-
-    init(
-        id: UUID = UUID(),
-        authorName: String,
-        status: ApprovalStatus,
-        createdAt: Date = Date()
-    ) {
-        self.id = id
-        self.authorName = authorName
-        self.status = status
-        self.createdAt = createdAt
-    }
-}
-
 enum PhotoPermissionState: Equatable {
     case loading
     case loaded(PhotoPermissions)
@@ -31,13 +12,19 @@ enum PhotoPermissionState: Equatable {
     case error
 }
 
+private enum RakugakiLoadState: Equatable {
+    case loading
+    case loaded
+    case failed
+}
+
 @MainActor
 struct PhotoDetailScreen: View {
     let photo: Photo
     let photoReader: any PhotoReading
+    let rakugakiReader: any PhotoRakugakiReading
     let assetLoader: PrivateAssetLoader?
     let sessionContext: SessionContext?
-    let rakugakis: [RakugakiSummary]
     let onOpenAR: () -> Void
     let photoService: any PhotoDetailUIService
     let existingPhotoRakugakiService: (any ExistingPhotoRakugakiServing)?
@@ -45,6 +32,10 @@ struct PhotoDetailScreen: View {
     @Environment(\.dismiss) private var dismiss
     @State private var permissionState: PhotoPermissionState = .loading
     @State private var photoImage: UIImage?
+    @State private var compositeImage: UIImage?
+    @State private var rakugakis: [PhotoRakugaki] = []
+    @State private var rakugakiLoadState: RakugakiLoadState = .loading
+    @State private var rakugakiLoadGeneration = 0
     @State private var likeState: PhotoLikeState
     @State private var isPhotoOperationBusy = false
     @State private var photoOperationError: Error?
@@ -55,18 +46,18 @@ struct PhotoDetailScreen: View {
     init(
         photo: Photo,
         photoReader: any PhotoReading,
+        rakugakiReader: any PhotoRakugakiReading = FakePhotoRakugakiReader(),
         assetLoader: PrivateAssetLoader? = nil,
         sessionContext: SessionContext? = nil,
-        rakugakis: [RakugakiSummary] = [],
         existingPhotoRakugakiService: (any ExistingPhotoRakugakiServing)? = nil,
         onOpenAR: @escaping () -> Void = {},
         photoService: any PhotoDetailUIService = FakePhotoDetailUIService()
     ) {
         self.photo = photo
         self.photoReader = photoReader
+        self.rakugakiReader = rakugakiReader
         self.assetLoader = assetLoader
         self.sessionContext = sessionContext
-        self.rakugakis = rakugakis
         self.existingPhotoRakugakiService = existingPhotoRakugakiService
         self.onOpenAR = onOpenAR
         self.photoService = photoService
@@ -80,7 +71,7 @@ struct PhotoDetailScreen: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: AppSpacing.xLarge) {
                     if canView {
-                        PhotoHeroView(photo: photo, image: photoImage)
+                        PhotoHeroView(photo: photo, image: compositeImage ?? photoImage)
 
                         VStack(alignment: .leading, spacing: AppSpacing.small) {
                             Text(photo.title)
@@ -101,6 +92,7 @@ struct PhotoDetailScreen: View {
                 .padding(.horizontal, AppSpacing.xLarge)
                 .padding(.vertical, AppSpacing.large)
             }
+            .refreshable { await loadPermissions() }
             .background(AppColors.paper.ignoresSafeArea())
             .navigationTitle(Text("map.photo-detail.title"))
             .navigationBarTitleDisplayMode(.inline)
@@ -127,6 +119,9 @@ struct PhotoDetailScreen: View {
             if let existingPhotoRakugakiService {
                 AddRakugakiFlow(photo: photo, service: existingPhotoRakugakiService)
             }
+        }
+        .onChange(of: showsRakugakiFlow) { _, isPresented in
+            if !isPresented { Task { await reloadRakugakis() } }
         }
         .accessibilityIdentifier("screen.photo-detail")
         .accessibilityLabel(Text("map.photo-detail.title"))
@@ -276,7 +271,15 @@ struct PhotoDetailScreen: View {
                 .font(.headline)
                 .foregroundStyle(AppColors.ink)
 
-            if rakugakis.isEmpty {
+            if rakugakiLoadState == .loading {
+                ProgressView()
+                    .accessibilityLabel(Text("state.loading"))
+            } else if rakugakiLoadState == .failed {
+                Text("state.error.default")
+                    .foregroundStyle(AppColors.coral)
+                Button("map.refresh") { Task { await reloadRakugakis() } }
+                    .frame(minHeight: 44)
+            } else if rakugakis.isEmpty {
                 Text("map.rakugaki-list.empty")
                     .font(.subheadline)
                     .foregroundStyle(AppColors.ink.opacity(0.70))
@@ -295,7 +298,7 @@ struct PhotoDetailScreen: View {
                             VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
                                 Text(rakugaki.authorName)
                                     .font(.subheadline.weight(.semibold))
-                                Text(rakugaki.status.localizedKey)
+                                Text("map.rakugaki.status.approved")
                                     .font(.caption)
                                     .foregroundStyle(AppColors.ink.opacity(0.70))
                             }
@@ -371,18 +374,25 @@ struct PhotoDetailScreen: View {
     private func loadPermissions() async {
         permissionState = .loading
         photoImage = nil
+        compositeImage = nil
+        rakugakis = []
+        rakugakiLoadState = .loading
+        rakugakiLoadGeneration &+= 1
         do {
             let permissions = try await photoReader.permissions(photoID: photo.id)
             guard !Task.isCancelled else { return }
             permissionState = .loaded(permissions)
-            guard permissions.canView, let assetLoader, let sessionContext else { return }
-            let image = try await assetLoader.load(
-                asset: photo.thumbnail ?? photo.asset,
-                targetPixelSize: CGSize(width: 1200, height: 800),
-                context: sessionContext
-            )
-            guard !Task.isCancelled else { return }
-            photoImage = image
+            guard permissions.canView else { return }
+            if let assetLoader, let sessionContext {
+                let image = try await assetLoader.load(
+                    asset: photo.asset,
+                    targetPixelSize: CGSize(width: 1200, height: 1200),
+                    context: sessionContext
+                )
+                guard !Task.isCancelled else { return }
+                photoImage = image
+            }
+            await reloadRakugakis()
         } catch let error as PhotoReadingError {
             guard !Task.isCancelled else { return }
             switch error {
@@ -414,6 +424,37 @@ struct PhotoDetailScreen: View {
             permissionState = .error
         }
     }
+
+    private func reloadRakugakis() async {
+        guard canView else { return }
+        rakugakiLoadGeneration &+= 1
+        let generation = rakugakiLoadGeneration
+        rakugakiLoadState = .loading
+        do {
+            let fetched = try await rakugakiReader.approved(photoID: photo.id)
+            let rows = fetched.sorted { $0.createdAt < $1.createdAt }
+            guard !Task.isCancelled, generation == rakugakiLoadGeneration else { return }
+            var overlays: [UIImage] = []
+            if let assetLoader, let sessionContext, let photoImage {
+                for row in rows {
+                    let image = try await assetLoader.load(
+                        asset: row.asset,
+                        targetPixelSize: CGSize(width: 1200, height: 1200),
+                        context: sessionContext
+                    )
+                    guard !Task.isCancelled, generation == rakugakiLoadGeneration else { return }
+                    overlays.append(image)
+                }
+                compositeImage = PhotoCompositeRenderer.render(photo: photoImage,
+                                                                overlays: overlays)
+            }
+            rakugakis = rows
+            rakugakiLoadState = .loaded
+        } catch {
+            guard !Task.isCancelled, generation == rakugakiLoadGeneration else { return }
+            rakugakiLoadState = .failed
+        }
+    }
 }
 
 @MainActor
@@ -422,16 +463,12 @@ private struct PhotoHeroView: View {
     let image: UIImage?
 
     var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 22)
-                .fill(AppColors.mint.opacity(0.30))
+        Group {
             if let image {
                 Image(uiImage: image)
                     .resizable()
-                    .scaledToFill()
+                    .scaledToFit()
                     .frame(maxWidth: .infinity)
-                    .frame(height: 190)
-                    .clipped()
                     .clipShape(RoundedRectangle(cornerRadius: 22))
             } else {
                 VStack(spacing: AppSpacing.small) {
@@ -443,25 +480,14 @@ private struct PhotoHeroView: View {
                         .font(.subheadline)
                         .foregroundStyle(AppColors.ink.opacity(0.72))
                 }
+                .frame(maxWidth: .infinity)
+                .frame(height: 190)
             }
         }
+        .background(AppColors.mint.opacity(0.30), in: RoundedRectangle(cornerRadius: 22))
         .frame(maxWidth: .infinity)
-        .frame(height: 190)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(Text(photo.title))
         .accessibilityIdentifier("photo.asset")
-    }
-}
-
-private extension ApprovalStatus {
-    var localizedKey: LocalizedStringKey {
-        switch self {
-        case .pending:
-            "map.rakugaki.status.pending"
-        case .approved:
-            "map.rakugaki.status.approved"
-        case .rejected:
-            "map.rakugaki.status.rejected"
-        }
     }
 }

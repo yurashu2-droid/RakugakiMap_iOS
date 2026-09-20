@@ -25,6 +25,7 @@ struct ProfileBootstrapView: View {
                 ProgressView("プロフィールを確認しています")
             case .ready:
                 RootTabs(photoReader: container.photoReader,
+                         photoRakugakiReader: container.photoRakugakiReader,
                          locationProvider: container.mapLocationProvider,
                          assetLoader: container.assetLoader,
                          sessionContext: context,
