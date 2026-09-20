@@ -46,6 +46,7 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
         CURRENT_PROJECT_VERSION: 1
         MARKETING_VERSION: 0.1.0
+        CODE_SIGN_ENTITLEMENTS: MapGrapherIOS/Resources/MapGrapherIOS.entitlements
     dependencies:
       - package: MapGrapherCore
       - package: Supabase

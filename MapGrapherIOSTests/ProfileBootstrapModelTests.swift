@@ -4,6 +4,36 @@ import MapGrapherCore
 
 @MainActor
 final class ProfileBootstrapModelTests: XCTestCase {
+    func testExistingProfileOpensAppWithoutSetup() async {
+        let session = SessionController(auth: BootstrapAuthService())
+        await session.start()
+        let restored = await session.currentContext()
+        let context = try! XCTUnwrap(restored)
+        let service = BootstrapProfileService(exists: true)
+        let model = ProfileBootstrapModel(context: context, session: session, service: service)
+
+        await model.load()
+
+        XCTAssertEqual(model.state, .ready)
+        XCTAssertTrue(model.canOpenApp)
+        XCTAssertNil(service.createdID)
+    }
+
+    func testInvalidPublicIDDoesNotCreateProfile() async {
+        let session = SessionController(auth: BootstrapAuthService())
+        await session.start()
+        let restored = await session.currentContext()
+        let context = try! XCTUnwrap(restored)
+        let service = BootstrapProfileService(exists: false)
+        let model = ProfileBootstrapModel(context: context, session: session, service: service)
+        await model.load()
+
+        await model.submit(displayName: "試験者", uniqueID: "bad id")
+
+        XCTAssertFalse(model.canOpenApp)
+        XCTAssertNil(service.createdID)
+    }
+
     func testMissingProfileRequiresSetupBeforeAppCanOpen() async {
         let session = SessionController(auth: BootstrapAuthService())
         await session.start()

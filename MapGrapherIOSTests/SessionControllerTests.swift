@@ -4,6 +4,23 @@ import MapGrapherCore
 
 @MainActor
 final class SessionControllerTests: XCTestCase {
+    func testSocialSignInUsesTheSameAuthenticatedSession() async throws {
+        let auth = FakeAuthService(snapshot: .signedOut)
+        let controller = SessionController(auth: auth)
+        await controller.start()
+        try await controller.signInWithGoogle()
+        XCTAssertEqual(controller.state, .authenticated(auth.nextSignInID))
+        let googleContext = await controller.currentContext()
+        XCTAssertEqual(googleContext?.userID, auth.nextSignInID)
+
+        try await controller.signOut()
+        try await controller.signInWithApple(idToken: "test-token", nonce: "test-nonce")
+        XCTAssertEqual(controller.state, .authenticated(auth.nextSignInID))
+        let appleContext = await controller.currentContext()
+        XCTAssertEqual(appleContext?.userID, auth.nextSignInID)
+        XCTAssertNotEqual(googleContext?.epoch, appleContext?.epoch)
+    }
+
     func testLogoutInvalidatesOldContextEvenWhenRemoteLogoutFails() async throws {
         let user = UUID()
         let auth = FakeAuthService(snapshot: .authenticated(user), signOutFailure: true)
