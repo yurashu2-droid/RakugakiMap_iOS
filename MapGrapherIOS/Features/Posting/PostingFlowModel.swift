@@ -1,5 +1,6 @@
 import Combine
 import CryptoKit
+import Combine
 import Foundation
 import ImageIO
 import MapGrapherCore
@@ -8,10 +9,15 @@ import UniformTypeIdentifiers
 
 @MainActor
 protocol PostingUIService {
+    var storesDraftsPersistently: Bool { get }
     func prepareImage(data: Data, suggestedFilename: String) async throws -> PreparedPostingImage
     func currentLocation() async -> GeoPoint?
     func saveDraft(_ draft: PostingDraft) async throws
     func submit(_ draft: PostingDraft) async throws -> PostingSubmissionResult
+}
+
+extension PostingUIService {
+    var storesDraftsPersistently: Bool { false }
 }
 
 enum PostingServiceError: Error, Equatable, Sendable {
@@ -133,6 +139,8 @@ final class PostingFlowModel: ObservableObject {
         draft.preparedImage != nil || !draft.title.isEmpty || draft.drawing != nil
     }
 
+    var storesDraftsPersistently: Bool { service.storesDraftsPersistently }
+
     func loadLocation() async {
         guard draft.location == nil else { return }
         draft.location = await service.currentLocation()
@@ -145,10 +153,12 @@ final class PostingFlowModel: ObservableObject {
         defer { isBusy = false }
 
         do {
-            draft.preparedImage = try await service.prepareImage(
+            let prepared = try await service.prepareImage(
                 data: data,
                 suggestedFilename: suggestedFilename
             )
+            prepareNewOperationIfNeeded()
+            draft.preparedImage = prepared
             draft.drawing = nil
             if draft.location == nil {
                 draft.location = await service.currentLocation()
@@ -219,6 +229,7 @@ final class PostingFlowModel: ObservableObject {
             error = .invalidImage
             return
         }
+        prepareNewOperationIfNeeded()
         let width = max(1, preparedImage.prepared.pixelWidth)
         let height = max(1, preparedImage.prepared.pixelHeight)
         draft.drawing = DrawingDocument(pixelWidth: width, pixelHeight: height, strokes: [])
@@ -274,6 +285,7 @@ final class PostingFlowModel: ObservableObject {
 
     func saveAndClose() async -> Bool {
         guard hasUnsavedDraft else { return true }
+        guard storesDraftsPersistently else { return false }
         guard !isBusy else { return false }
         isBusy = true
         defer { isBusy = false }

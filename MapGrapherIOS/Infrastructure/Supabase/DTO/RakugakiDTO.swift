@@ -5,6 +5,11 @@ struct CreateRakugakiRequestDTO: Encodable, Sendable {
     let targetPhotoId: UUID
     let targetAssetPath: String
 }
+struct CreateRakugakiV2RequestDTO: Encodable, Sendable {
+    let clientRequestId: UUID
+    let targetPhotoId: UUID
+    let targetAssetPath: String
+}
 struct ApproveRakugakiRequestDTO: Encodable, Sendable {
     let targetRakugakiId: UUID
     let approved: Bool

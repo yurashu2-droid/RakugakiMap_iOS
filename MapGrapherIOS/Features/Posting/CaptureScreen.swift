@@ -1,5 +1,6 @@
 import PhotosUI
 import SwiftUI
+import UIKit
 
 @MainActor
 struct CaptureScreen: View {
@@ -10,6 +11,7 @@ struct CaptureScreen: View {
     let onUseFixture: () async -> Void
 
     @State private var selectedItem: PhotosPickerItem?
+    @State private var showsCamera = false
 
     var body: some View {
         ScrollView {
@@ -31,6 +33,16 @@ struct CaptureScreen: View {
                 }
 
                 VStack(spacing: AppSpacing.medium) {
+                    Button {
+                        showsCamera = true
+                    } label: {
+                        Label("posting.capture.camera", systemImage: "camera")
+                            .frame(maxWidth: .infinity, minHeight: 52)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(isBusy || !UIImagePickerController.isSourceTypeAvailable(.camera))
+                    .accessibilityIdentifier("posting.capture.camera")
+
                     PhotosPicker(
                         selection: $selectedItem,
                         matching: .images,
@@ -90,6 +102,57 @@ struct CaptureScreen: View {
                 }
                 selectedItem = nil
             }
+        }
+        .sheet(isPresented: $showsCamera) {
+            PostingCameraPicker(isPresented: $showsCamera) { data in
+                Task { await onImport(data, "camera.jpg") }
+            }
+            .ignoresSafeArea()
+        }
+    }
+}
+
+@MainActor
+private struct PostingCameraPicker: UIViewControllerRepresentable {
+    @Binding var isPresented: Bool
+    let onCapture: (Data) -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(isPresented: $isPresented, onCapture: onCapture)
+    }
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .camera
+        picker.cameraDevice = .rear
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ controller: UIImagePickerController, context: Context) {}
+
+    @MainActor
+    final class Coordinator: NSObject, @preconcurrency UIImagePickerControllerDelegate,
+                             @preconcurrency UINavigationControllerDelegate {
+        private var isPresented: Binding<Bool>
+        private let onCapture: (Data) -> Void
+
+        init(isPresented: Binding<Bool>, onCapture: @escaping (Data) -> Void) {
+            self.isPresented = isPresented
+            self.onCapture = onCapture
+        }
+
+        func imagePickerController(_ picker: UIImagePickerController,
+                                   didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+            if let image = info[.originalImage] as? UIImage,
+               let data = image.jpegData(compressionQuality: 0.9) {
+                onCapture(data)
+            }
+            isPresented.wrappedValue = false
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            isPresented.wrappedValue = false
         }
     }
 }

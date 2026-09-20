@@ -6,6 +6,7 @@ struct SubmissionStatusScreen: View {
     let result: PostingSubmissionResult?
     let error: PostingFlowError?
     let isBusy: Bool
+    let isPrototype: Bool
     let waitingForApproval: Bool
     let onRetry: () -> Void
     let onBack: () -> Void
@@ -59,7 +60,9 @@ struct SubmissionStatusScreen: View {
                         .accessibilityIdentifier("posting.status.edit")
                 }
 
-                Text("posting.status.draft-kept")
+                Text(isPrototype
+                     ? LocalizedStringKey("posting.status.prototype.draft")
+                     : LocalizedStringKey("posting.status.draft-kept"))
                     .font(.caption)
                     .foregroundStyle(AppColors.ink.opacity(0.68))
                     .multilineTextAlignment(.center)
@@ -97,6 +100,7 @@ struct SubmissionStatusScreen: View {
     }
 
     private var canRetry: Bool {
+        if isPrototype { return false }
         switch result?.state {
         case .some(.queued), .some(.retryWaiting), .some(.needsLogin), .some(.needsCorrection),
              .some(.outcomeUnknown), .some(.cancelled):
@@ -146,6 +150,7 @@ struct SubmissionStatusScreen: View {
     }
 
     private var detailKey: LocalizedStringKey {
+        if isPrototype { return "posting.status.prototype.detail" }
         switch result?.state {
         case .some(.completed):
             "posting.status.success.detail"

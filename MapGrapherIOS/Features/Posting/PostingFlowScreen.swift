@@ -45,12 +45,13 @@ struct PostingFlowScreen: View {
                 }
         }
         .background(AppColors.paper)
+        .interactiveDismissDisabled(model.hasUnsavedDraft)
         .confirmationDialog(
             "posting.close.title",
             isPresented: $showsCloseDialog,
             titleVisibility: .visible
         ) {
-            if model.hasUnsavedDraft {
+            if model.hasUnsavedDraft && model.storesDraftsPersistently {
                 Button("posting.close.save") {
                     Task {
                         if await model.saveAndClose() {
@@ -59,7 +60,9 @@ struct PostingFlowScreen: View {
                     }
                 }
                 .accessibilityIdentifier("posting.close.save")
+            }
 
+            if model.hasUnsavedDraft {
                 Button("posting.close.discard", role: .destructive) {
                     model.discardDraft()
                     dismiss()
@@ -75,7 +78,9 @@ struct PostingFlowScreen: View {
         } message: {
             Text(
                 model.hasUnsavedDraft
-                    ? LocalizedStringKey("posting.close.detail")
+                    ? (model.storesDraftsPersistently
+                       ? LocalizedStringKey("posting.close.detail")
+                       : LocalizedStringKey("posting.close.prototype-detail"))
                     : LocalizedStringKey("posting.close.empty-detail")
             )
         }
@@ -142,6 +147,7 @@ struct PostingFlowScreen: View {
                 result: model.status,
                 error: model.error,
                 isBusy: model.isBusy,
+                isPrototype: !model.storesDraftsPersistently,
                 waitingForApproval: model.draft.reserveAR && model.draft.requiresApproval,
                 onRetry: {
                     Task { await model.retrySubmission() }

@@ -9,8 +9,8 @@ struct PublishScreen: View {
     let error: PostingFlowError?
     let showsNewOperationNotice: Bool
     let onTitleChange: (String) -> Void
-    let onVisibilityChange: (Visibility) -> Void
-    let onDrawPermissionChange: (Visibility) -> Void
+    let onVisibilityChange: (MapGrapherCore.Visibility) -> Void
+    let onDrawPermissionChange: (MapGrapherCore.Visibility) -> Void
     let onApprovalChange: (Bool) -> Void
     let onReserveARChange: (Bool) -> Void
     let onSubmit: () -> Void
@@ -67,12 +67,12 @@ struct PublishScreen: View {
                 Picker("posting.publish.visibility", selection: Binding(
                     get: { draft.visibility.rawValue },
                     set: { rawValue in
-                        if let value = Visibility(rawValue: rawValue) {
+                        if let value = MapGrapherCore.Visibility(rawValue: rawValue) {
                             onVisibilityChange(value)
                         }
                     }
                 )) {
-                    ForEach(Visibility.postingChoices, id: \.rawValue) { value in
+                    ForEach(MapGrapherCore.Visibility.postingChoices, id: \.rawValue) { value in
                         Text(value.postingLabelKey).tag(value.rawValue)
                     }
                 }
@@ -81,12 +81,12 @@ struct PublishScreen: View {
                 Picker("posting.publish.draw-permission", selection: Binding(
                     get: { draft.drawPermission.rawValue },
                     set: { rawValue in
-                        if let value = Visibility(rawValue: rawValue) {
+                        if let value = MapGrapherCore.Visibility(rawValue: rawValue) {
                             onDrawPermissionChange(value)
                         }
                     }
                 )) {
-                    ForEach(Visibility.postingChoices, id: \.rawValue) { value in
+                    ForEach(MapGrapherCore.Visibility.postingChoices, id: \.rawValue) { value in
                         Text(value.postingDrawLabelKey).tag(value.rawValue)
                     }
                 }
@@ -168,8 +168,8 @@ struct PublishScreen: View {
     }
 }
 
-private extension Visibility {
-    static var postingChoices: [Visibility] { [.onlyMe, .friends, .anyone] }
+private extension MapGrapherCore.Visibility {
+    static var postingChoices: [MapGrapherCore.Visibility] { [.onlyMe, .friends, .anyone] }
 
     var postingLabelKey: LocalizedStringKey {
         switch self {

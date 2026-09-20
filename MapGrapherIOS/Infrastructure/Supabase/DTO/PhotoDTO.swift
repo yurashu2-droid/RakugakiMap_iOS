@@ -65,6 +65,19 @@ struct CreatePhotoPinRequestDTO: Encodable, Sendable {
     let byteSize: Int64?
 }
 
+struct CreatePhotoPinV2RequestDTO: Encodable, Sendable {
+    let clientRequestId: UUID
+    let title: String
+    let lat: Double
+    let lon: Double
+    let privacy: Visibility
+    let drawPermission: Visibility
+    let requiresApproval: Bool
+    let photoPath: String
+    let mimeType: String
+    let byteSize: Int64
+}
+
 struct PhotoRowDTO: Decodable, Sendable {
     let id: UUID
     let ownerId: UUID
