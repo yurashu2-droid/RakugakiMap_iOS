@@ -47,7 +47,11 @@ final class ForegroundLocationProvider: NSObject, CLLocationManagerDelegate {
         continuation = nil
     }
 
-    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+    nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        Task { @MainActor [weak self] in self?.authorizationChanged() }
+    }
+
+    private func authorizationChanged() {
         guard isRunning else { return }
         switch manager.authorizationStatus {
         case .authorizedAlways, .authorizedWhenInUse:
@@ -63,19 +67,29 @@ final class ForegroundLocationProvider: NSObject, CLLocationManagerDelegate {
         }
     }
 
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+    nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        let readings = locations.map { location in
+            (latitude: location.coordinate.latitude,
+             longitude: location.coordinate.longitude,
+             accuracy: location.horizontalAccuracy,
+             timestamp: location.timestamp)
+        }
+        Task { @MainActor [weak self] in self?.receive(readings) }
+    }
+
+    private func receive(_ readings: [(latitude: Double, longitude: Double, accuracy: Double, timestamp: Date)]) {
         guard isRunning else { return }
-        for location in locations {
-            guard let point = GeoPoint(latitude: location.coordinate.latitude,
-                                       longitude: location.coordinate.longitude),
+        for reading in readings {
+            guard let point = GeoPoint(latitude: reading.latitude,
+                                       longitude: reading.longitude),
                   let sample = LocationSample(point: point,
-                                              horizontalAccuracyM: location.horizontalAccuracy,
-                                              timestamp: location.timestamp) else { continue }
+                                              horizontalAccuracyM: reading.accuracy,
+                                              timestamp: reading.timestamp) else { continue }
             continuation?.yield(sample)
         }
     }
 
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+    nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         // 一時的な測位失敗は次のサンプルを待つ。権限変化は専用callbackで扱う。
     }
 }

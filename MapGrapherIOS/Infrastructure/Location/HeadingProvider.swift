@@ -39,13 +39,22 @@ final class HeadingProvider: NSObject, CLLocationManagerDelegate {
         continuation = nil
     }
 
-    func locationManager(_ manager: CLLocationManager, didUpdateHeading heading: CLHeading) {
+    nonisolated func locationManager(_ manager: CLLocationManager, didUpdateHeading heading: CLHeading) {
+        let degrees = heading.trueHeading
+        let accuracy = heading.headingAccuracy
+        let timestamp = heading.timestamp
+        Task { @MainActor [weak self] in
+            self?.receive(degrees: degrees, accuracy: accuracy, timestamp: timestamp)
+        }
+    }
+
+    private func receive(degrees: Double, accuracy: Double, timestamp: Date) {
         guard isRunning,
-              heading.headingAccuracy >= 0,
-              heading.trueHeading.isFinite,
-              (0..<360).contains(heading.trueHeading) else { return }
-        continuation?.yield(TrueHeadingSample(degrees: heading.trueHeading,
-                                              accuracyDegrees: heading.headingAccuracy,
-                                              timestamp: heading.timestamp))
+              accuracy >= 0,
+              degrees.isFinite,
+              (0..<360).contains(degrees) else { return }
+        continuation?.yield(TrueHeadingSample(degrees: degrees,
+                                              accuracyDegrees: accuracy,
+                                              timestamp: timestamp))
     }
 }

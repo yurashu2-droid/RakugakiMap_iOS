@@ -1,5 +1,6 @@
 import Foundation
 import PhotosUI
+import SwiftUI
 
 enum PhotoPickerError: Error {
     case cancelled
