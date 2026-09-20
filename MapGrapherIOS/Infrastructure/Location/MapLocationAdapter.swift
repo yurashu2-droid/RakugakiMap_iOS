@@ -5,10 +5,16 @@ import MapGrapherCore
 /// 地図を開いた時に一度だけ測位し、常時追跡しません。
 @MainActor
 final class MapLocationAdapter: NSObject, MapLocationProviding, CLLocationManagerDelegate {
+    private let authorizationManager = CLLocationManager()
     private var manager: CLLocationManager?
     private var pending: CheckedContinuation<MapLocationState, Never>?
     private var timeout: Task<Void, Never>?
     private var requestID: UUID?
+
+    func requestAuthorizationIfNeeded() {
+        guard authorizationManager.authorizationStatus == .notDetermined else { return }
+        authorizationManager.requestWhenInUseAuthorization()
+    }
 
     func requestCurrentLocation() async -> MapLocationState {
         if pending != nil { return .unavailable }

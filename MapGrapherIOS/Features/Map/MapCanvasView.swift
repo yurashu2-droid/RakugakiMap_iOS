@@ -23,7 +23,7 @@ struct MapCanvasView: UIViewRepresentable {
         mapView.delegate = context.coordinator
         mapView.showsCompass = true
         mapView.showsScale = true
-        mapView.showsUserLocation = false
+        mapView.showsUserLocation = true
         mapView.register(
             MKMarkerAnnotationView.self,
             forAnnotationViewWithReuseIdentifier: Coordinator.annotationReuseIdentifier

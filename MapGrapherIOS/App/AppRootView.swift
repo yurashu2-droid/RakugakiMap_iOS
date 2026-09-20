@@ -25,6 +25,7 @@ struct AppRootView: View {
             do {
                 let created = AppContainer(gateway: try SupabaseGateway())
                 container = created
+                created.mapLocationProvider.requestAuthorizationIfNeeded()
                 await created.start()
                 if let pendingAuthURL {
                     try? await created.session.handleAuthURL(pendingAuthURL)
