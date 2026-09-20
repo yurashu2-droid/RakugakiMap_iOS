@@ -216,8 +216,8 @@ struct MapScreen: View {
                     assetLoader: assetLoader,
                     sessionContext: sessionContext,
                     existingPhotoRakugakiService: existingPhotoRakugakiService,
-                    photoService: photoService,
-                    onOpenAR: { onPresentRoute(.arPreview) }
+                    onOpenAR: { onPresentRoute(.arPreview) },
+                    photoService: photoService
                 )
             } else {
                 ContentUnavailableView("map.photo-detail.not-found", systemImage: "photo")
