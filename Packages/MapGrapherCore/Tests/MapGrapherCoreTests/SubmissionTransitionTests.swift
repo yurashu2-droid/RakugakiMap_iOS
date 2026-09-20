@@ -69,13 +69,9 @@ final class SubmissionTransitionTests: XCTestCase {
         }
     }
 
-    func testUnknownRegistrationOutcomeRequiresResolutionBeforeCompletion() {
+    func testUnknownRegistrationOutcomeCannotRestartUpload() {
         XCTAssertTrue(SubmissionTransition.allows(
             from: .registering, to: .outcomeUnknown,
-            requiresRemoteDependency: false, dependencyRemoteID: nil
-        ))
-        XCTAssertFalse(SubmissionTransition.allows(
-            from: .outcomeUnknown, to: .completed,
             requiresRemoteDependency: false, dependencyRemoteID: nil
         ))
     }

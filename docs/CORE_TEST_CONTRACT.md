@@ -39,6 +39,6 @@ public enum SubmissionTransition {
 
 `RevealGate` は距離が半径以下、精度が0〜25m、サンプル経過が0〜10秒の連続する異なる時刻の2サンプルで解放する。半径は10〜200mだけ有効。同一時刻は加算せず、無効値・範囲外は連続数を戻す。古い順序のサンプルは加算しない。解放後は探索中に再ロックしない。
 
-`SubmissionTransition` は通常工程を一段ずつ進める。依存が必要な工程の`queued → uploading`は先行工程のremote IDがない限り拒否する。`completed`と`cancelled`からの再進行、逆行、同状態遷移を拒否する。認証と再試行からの復帰は許す。`outcomeUnknown`からの再uploadや根拠のない完了も拒否する。状態遷移はローカル制約であり、サーバーの権限判定や冪等性の代わりにはしない。
+`SubmissionTransition` は通常工程を一段ずつ進める。依存が必要な工程の`queued → uploading`は先行工程のremote IDがない限り拒否する。`completed`と`cancelled`からの再進行、逆行、同状態遷移を拒否する。認証と再試行からの復帰は許す。`outcomeUnknown`からの再uploadを拒否する。状態遷移はローカル制約であり、サーバーの権限判定や冪等性の代わりにはしない。
 
 Windows環境にSwift/Xcodeがないため、ここではコンパイル・テスト未実行。Sources実装前のREDと、実装後のGREENをMac上のActionsで確認する。

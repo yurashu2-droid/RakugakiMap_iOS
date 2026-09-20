@@ -35,7 +35,7 @@ jobs:
     env:
       DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
       - name: Toolchain
@@ -44,3 +44,34 @@ jobs:
           swift --version
       - name: Core tests
         run: swift test --package-path Packages/MapGrapherCore
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 35
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Generate project
+        run: bash scripts/generate-project.sh
+      - name: Unsigned device build
+        run: bash scripts/verify-ios.sh build
+      - name: Select simulator
+        run: |
+          simulator_id=$(xcrun simctl list devices available --json | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for runtime,devices in sorted(d["devices"].items(), reverse=True) if "iOS" in runtime for x in devices if "iPhone" in x["name"]))')
+          echo "IOS_SIMULATOR_ID=$simulator_id" >> "$GITHUB_ENV"
+          xcrun simctl boot "$simulator_id"
+          xcrun simctl bootstatus "$simulator_id" -b
+      - name: Unit tests
+        run: bash scripts/verify-ios.sh unit
+      - name: UI tests
+        run: bash scripts/verify-ios.sh ui
+      - name: Test results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ios-test-results
+          path: .build/verification
+          if-no-files-found: ignore
+          retention-days: 7
