@@ -15,6 +15,7 @@ struct MapScreen: View {
     @StateObject private var model: MapScreenModel
     @State private var sheetRoute: MapSheetRoute?
     @State private var selectedPhoto: Photo?
+    @State private var pendingARPhotoID: UUID?
     @State private var trackingRequest = 0
     @State private var isFollowingHeading = false
     @State private var usesAerialImagery = false
@@ -152,7 +153,12 @@ struct MapScreen: View {
             .onDisappear {
                 model.cancelPendingSearch()
             }
-            .sheet(item: $sheetRoute) { route in
+            .sheet(item: $sheetRoute, onDismiss: {
+                if let photoID = pendingARPhotoID {
+                    pendingARPhotoID = nil
+                    onPresentRoute(.arPhoto(photoID))
+                }
+            }) { route in
                 sheetView(for: route)
             }
         }
@@ -279,8 +285,8 @@ struct MapScreen: View {
             sessionContext: sessionContext,
             existingPhotoRakugakiService: existingPhotoRakugakiService,
             onOpenAR: {
+                pendingARPhotoID = photo.id
                 sheetRoute = nil
-                onPresentRoute(.arPhoto(photo.id))
             },
             photoService: photoService
         )
