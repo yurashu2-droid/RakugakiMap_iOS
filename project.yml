@@ -23,7 +23,7 @@ targets:
       path: MapGrapherIOS/Resources/Info.plist
       properties:
         CFBundleDisplayName: RakugakiMap
-        NSCameraUsageDescription: 現地でラクガキをAR表示するためにカメラを使います。
+        NSCameraUsageDescription: 現地でラクガキをAR表示し、端末を動かして空間に描くためにカメラを使います。
         NSLocationWhenInUseUsageDescription: 近くの写真と現地のAR作品を探すために位置情報を使います。
         NSPhotoLibraryUsageDescription: 投稿に使う写真を選ぶために写真ライブラリを使います。
         NSPhotoLibraryAddUsageDescription: 共有メニューで選んだAR写真を写真ライブラリに保存します。

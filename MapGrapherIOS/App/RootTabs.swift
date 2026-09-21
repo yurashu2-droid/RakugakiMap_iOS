@@ -130,6 +130,8 @@ struct RootTabs: View {
     @ViewBuilder
     private func fullScreenView(for route: AppRoute) -> some View {
         switch route {
+        case .spatialARDrawing:
+            SpatialARDrawingScreen(isUITesting: isUITesting)
         case .arPreview, .arPhoto:
             if let arRepository, let assetLoader, let sessionContext, let arSession {
                 ARExplorerFlow(repository: arRepository, assetLoader: assetLoader,

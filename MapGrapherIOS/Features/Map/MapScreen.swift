@@ -137,14 +137,23 @@ struct MapScreen: View {
                     .accessibilityLabel(Text("map.photo-list.open"))
                     .accessibilityIdentifier("map.photo-list.button")
                 }
-                ToolbarItem(placement: .bottomBar) {
+                ToolbarItemGroup(placement: .bottomBar) {
                     Button {
                         onPresentRoute(.postComposer)
                     } label: {
-                        Label("route.post.button", systemImage: "camera.fill")
+                        Label("投稿", systemImage: "camera.fill")
                     }
                     .frame(minHeight: 44)
                     .accessibilityIdentifier("map.post.button")
+
+                    Button {
+                        onPresentRoute(.spatialARDrawing)
+                    } label: {
+                        Label("空間に描く", systemImage: "scribble.variable")
+                    }
+                    .frame(minHeight: 44)
+                    .accessibilityIdentifier("map.spatial-ar-drawing.button")
+                    .accessibilityLabel("空間に描く")
                 }
             }
             .task {

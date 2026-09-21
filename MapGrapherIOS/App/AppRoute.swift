@@ -19,6 +19,7 @@ enum AppRoute: Hashable, Identifiable {
     case postComposer
     case arPreview
     case arPhoto(UUID)
+    case spatialARDrawing
 
     var id: String {
         switch self {
@@ -38,6 +39,8 @@ enum AppRoute: Hashable, Identifiable {
             "ar-preview"
         case .arPhoto(let photoID):
             "ar-photo.\(photoID.uuidString)"
+        case .spatialARDrawing:
+            "spatial-ar-drawing"
         }
     }
 }
@@ -54,7 +57,7 @@ final class AppRouter: ObservableObject {
         case .tab(let tab):
             selectedTab = tab
             path.removeAll()
-        case .postComposer, .arPreview, .arPhoto:
+        case .postComposer, .arPreview, .arPhoto, .spatialARDrawing:
             fullScreenRoute = route
         case .welcome, .signIn, .signUp, .passwordReset:
             path.append(route)
