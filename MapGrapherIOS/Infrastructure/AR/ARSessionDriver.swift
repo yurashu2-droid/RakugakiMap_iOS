@@ -295,7 +295,10 @@ final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
         persistentAnchor = anchor
 
         do {
-            let worldMap = try await ARWorldMapCaptureRequest.capture(from: arView.session)
+            let data = try await ARWorldMapCaptureRequest.captureArchive(
+                from: arView.session,
+                requiredAnchorName: anchorName
+            )
             guard !Task.isCancelled,
                   generation == startGeneration,
                   isRunning,
@@ -304,10 +307,6 @@ final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
                   isCurrentSession(sessionIdentifier) else {
                 throw ARWorldMapCaptureError.cancelled
             }
-            let data = try ARWorldMapArchive.encode(
-                worldMap,
-                requiredAnchorName: anchorName
-            )
             guard let package = PersistentARPackage(
                 data: data,
                 anchorName: anchorName,

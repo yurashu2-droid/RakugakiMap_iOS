@@ -11,13 +11,25 @@ enum ARWorldMapCaptureError: Error {
 
 @MainActor
 enum ARWorldMapCaptureRequest {
-    static func capture(from session: ARSession) async throws -> ARWorldMap {
+    /// ARWorldMapはSendableではないため、ARKitのcallback内でarchiveし、
+    /// actor境界を越える値はDataだけに限定する。
+    static func captureArchive(
+        from session: ARSession,
+        requiredAnchorName: String
+    ) async throws -> Data {
         try await withCheckedThrowingContinuation { continuation in
             session.getCurrentWorldMap { worldMap, error in
                 if let error {
                     continuation.resume(throwing: error)
                 } else if let worldMap {
-                    continuation.resume(returning: worldMap)
+                    do {
+                        continuation.resume(returning: try ARWorldMapArchive.encode(
+                            worldMap,
+                            requiredAnchorName: requiredAnchorName
+                        ))
+                    } catch {
+                        continuation.resume(throwing: error)
+                    }
                 } else {
                     continuation.resume(throwing: ARWorldMapCaptureError.sessionUnavailable)
                 }
