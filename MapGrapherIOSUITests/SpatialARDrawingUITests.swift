@@ -43,4 +43,3 @@ final class SpatialARDrawingUITests: XCTestCase {
         app.descendants(matching: .any).matching(identifier: identifier).firstMatch
     }
 }
-

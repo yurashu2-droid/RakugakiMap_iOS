@@ -18,11 +18,16 @@ struct SpatialARDrawingScreen: View {
             canvas
                 .ignoresSafeArea()
 
+            if driver.penTipMode == .cameraForward {
+                forwardSight
+            }
+
             VStack(spacing: AppSpacing.medium) {
                 header
                 Spacer()
                 statusCard
                 recoveryAction
+                penTipControls
                 brushControls
                 actionBar
             }
@@ -72,7 +77,7 @@ struct SpatialARDrawingScreen: View {
             VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
                 Text("空間に描く")
                     .font(.title2.bold())
-                Text("描くボタンを押したまま端末を動かします")
+                Text(penTipDescription)
                     .font(.caption)
             }
             .foregroundStyle(.white)
@@ -89,6 +94,67 @@ struct SpatialARDrawingScreen: View {
             .accessibilityLabel("閉じる")
             .accessibilityIdentifier("spatial-ar.close.button")
         }
+    }
+
+    private var forwardSight: some View {
+        ZStack {
+            Circle()
+                .stroke(Color.white.opacity(0.9), lineWidth: 2)
+                .frame(width: 34, height: 34)
+            Circle()
+                .fill(AppColors.coral)
+                .frame(width: 7, height: 7)
+            Rectangle()
+                .fill(Color.white.opacity(0.9))
+                .frame(width: 48, height: 1)
+            Rectangle()
+                .fill(Color.white.opacity(0.9))
+                .frame(width: 1, height: 48)
+        }
+        .shadow(color: .black.opacity(0.65), radius: 2)
+        .allowsHitTesting(false)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("前方30センチのペン先")
+        .accessibilityIdentifier("spatial-ar.forward-sight")
+    }
+
+    private var penTipControls: some View {
+        HStack(spacing: AppSpacing.small) {
+            penTipButton(
+                mode: .cameraBody,
+                title: "端末位置",
+                symbol: "iphone",
+                identifier: "spatial-ar.pen.camera-body"
+            )
+            penTipButton(
+                mode: .cameraForward,
+                title: "前方30cm",
+                symbol: "scope",
+                identifier: "spatial-ar.pen.camera-forward"
+            )
+        }
+        .padding(AppSpacing.small)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func penTipButton(
+        mode: SpatialPenTipMode,
+        title: String,
+        symbol: String,
+        identifier: String
+    ) -> some View {
+        Button {
+            driver.setPenTipMode(mode)
+        } label: {
+            Label(title, systemImage: symbol)
+                .font(.caption.weight(.bold))
+                .frame(maxWidth: .infinity, minHeight: 36)
+        }
+        .buttonStyle(.bordered)
+        .tint(driver.penTipMode == mode ? AppColors.coral : .white)
+        .disabled(isPressingDraw)
+        .accessibilityIdentifier(identifier)
+        .accessibilityAddTraits(driver.penTipMode == mode ? .isSelected : [])
     }
 
     private var statusCard: some View {
@@ -239,6 +305,15 @@ struct SpatialARDrawingScreen: View {
         case .pointLimitReached: "安全のため5,000点で停止しました。不要な線を消してください。"
         case .interrupted: "ARが中断されました。画面を開き直してください。"
         case .failed: "ARを継続できませんでした。画面を開き直してください。"
+        }
+    }
+
+    private var penTipDescription: String {
+        switch driver.penTipMode {
+        case .cameraBody:
+            "端末の位置をペン先にして、押したまま動かします"
+        case .cameraForward:
+            "画面中央の30cm先をペン先にして、向きを動かします"
         }
     }
 

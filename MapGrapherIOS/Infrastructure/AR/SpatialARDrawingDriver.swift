@@ -25,6 +25,7 @@ final class SpatialARDrawingDriver: NSObject, ObservableObject, ARSessionDelegat
     @Published private(set) var isDrawing = false
     @Published private(set) var pointCount = 0
     @Published private(set) var completedStrokeCount = 0
+    @Published private(set) var penTipMode: SpatialPenTipMode = .cameraBody
 
     private let lease: ARCameraLease
     private var recorder: SpatialStrokeRecorder
@@ -96,6 +97,11 @@ final class SpatialARDrawingDriver: NSObject, ObservableObject, ARSessionDelegat
             wantsStart = false
             status = .cameraDenied
         }
+    }
+
+    func setPenTipMode(_ mode: SpatialPenTipMode) {
+        guard !isDrawing else { return }
+        penTipMode = mode
     }
 
     func beginStroke(style: SpatialStrokeStyle) {
@@ -266,10 +272,13 @@ final class SpatialARDrawingDriver: NSObject, ObservableObject, ARSessionDelegat
 
     nonisolated func session(_ session: ARSession, didUpdate frame: ARFrame) {
         let identifier = ObjectIdentifier(session)
-        let column = frame.camera.transform.columns.3
-        let position = SIMD3<Float>(column.x, column.y, column.z)
+        let transform = frame.camera.transform
+        let bodyPosition = SpatialPenTipMode.cameraBody.position(cameraTransform: transform)
+        let forwardPosition = SpatialPenTipMode.cameraForward.position(cameraTransform: transform)
         Task { @MainActor [weak self] in
             guard let self, self.isRunning, self.isCurrentSession(identifier) else { return }
+            let position = self.penTipMode == .cameraForward ? forwardPosition : bodyPosition
+            guard let position else { return }
             self.ingest(position: position)
         }
     }
