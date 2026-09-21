@@ -90,7 +90,7 @@ final class ARScreenModel: ObservableObject {
                 await self.resolve(sample: sample, token: token)
                 return
             }
-            guard self.generation == token else { return }
+            guard !Task.isCancelled, self.generation == token else { return }
             self.state = self.location.access == .denied ? .locationDenied : .unavailable
         }
         locationTimeoutTask = Task { [weak self] in
