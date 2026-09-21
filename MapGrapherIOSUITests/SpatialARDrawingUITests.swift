@@ -32,9 +32,15 @@ final class SpatialARDrawingUITests: XCTestCase {
         XCTAssertTrue(app.buttons["spatial-ar.width.0.01"].exists)
         XCTAssertTrue(app.buttons["spatial-ar.width.0.03"].exists)
         XCTAssertTrue(app.buttons["spatial-ar.width.0.06"].exists)
+        XCTAssertTrue(app.buttons["spatial-ar.pen.camera-body"].exists)
+        let forwardMode = app.buttons["spatial-ar.pen.camera-forward"]
+        XCTAssertTrue(forwardMode.exists)
+        forwardMode.tap()
+        XCTAssertTrue(element("spatial-ar.forward-sight", in: app).exists)
     }
 
     private func element(_ identifier: String, in app: XCUIApplication) -> XCUIElement {
         app.descendants(matching: .any).matching(identifier: identifier).firstMatch
     }
 }
+
