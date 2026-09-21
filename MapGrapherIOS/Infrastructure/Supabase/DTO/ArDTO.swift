@@ -8,6 +8,17 @@ struct CreateArExperienceRequestDTO: Encodable, Sendable {
     let targetDiscoveryRadiusM: Double
     let targetDisplayWidthM: Double
 }
+struct PublishPersistentARRequestDTO: Encodable, Sendable {
+    let targetPhotoId: UUID
+    let targetRakugakiId: UUID
+    let targetWorldMapPath: String
+    let targetAnchorName: String
+    let targetUnlockRadiusM: Double
+    let targetDiscoveryRadiusM: Double
+    let targetDisplayWidthM: Double
+    let targetFallbackAltitudeM: Double?
+    let targetFallbackHeadingDeg: Double?
+}
 struct ArExperienceRowDTO: Decodable, Sendable {
     let id: UUID
     let photoId: UUID
@@ -29,6 +40,11 @@ struct ArExperienceDTO: Decodable, Sendable {
     let displayWidthM: Double
     let latitude: Double
     let longitude: Double
+    let worldMapPath: String?
+    let anchorName: String?
+    let fallbackAltitudeM: Double?
+    let fallbackHeadingDeg: Double?
+    let worldMapFormatVersion: Int?
 }
 struct NearbyArTracesRequestDTO: Encodable, Sendable {
     let currentLatitude: Double

@@ -2,6 +2,7 @@ import Foundation
 
 public enum ArAnchorType: String, Codable, Sendable {
     case localPlane = "LOCAL_PLANE"
+    case worldMapV1 = "WORLD_MAP_V1"
 }
 
 public struct ArExperience: Equatable, Sendable {
@@ -14,6 +15,11 @@ public struct ArExperience: Equatable, Sendable {
     public let displayWidthM: Double
     public let location: GeoPoint
     public let anchorType: ArAnchorType
+    public let worldMap: AssetReference?
+    public let anchorName: String?
+    public let worldMapFormatVersion: Int?
+    public let fallbackAltitudeM: Double?
+    public let fallbackHeadingDeg: Double?
 
     public init?(
         id: UUID,
@@ -24,7 +30,12 @@ public struct ArExperience: Equatable, Sendable {
         discoveryRadiusM: Double,
         displayWidthM: Double,
         location: GeoPoint,
-        anchorType: ArAnchorType
+        anchorType: ArAnchorType,
+        worldMap: AssetReference? = nil,
+        anchorName: String? = nil,
+        worldMapFormatVersion: Int? = nil,
+        fallbackAltitudeM: Double? = nil,
+        fallbackHeadingDeg: Double? = nil
     ) {
         guard unlockRadiusM.isFinite,
               discoveryRadiusM.isFinite,
@@ -35,6 +46,20 @@ public struct ArExperience: Equatable, Sendable {
               (0.1...10.0).contains(displayWidthM) else {
             return nil
         }
+        switch anchorType {
+        case .localPlane:
+            guard worldMap == nil, anchorName == nil, worldMapFormatVersion == nil,
+                  fallbackAltitudeM == nil, fallbackHeadingDeg == nil else { return nil }
+        case .worldMapV1:
+            guard worldMap?.bucket == "ar-world-maps",
+                  let anchorName,
+                  anchorName.hasPrefix("rakugaki:"),
+                  UUID(uuidString: String(anchorName.dropFirst("rakugaki:".count))) != nil,
+                  worldMapFormatVersion == 1,
+                  fallbackAltitudeM?.isFinite != false,
+                  fallbackHeadingDeg?.isFinite != false,
+                  fallbackHeadingDeg.map({ (0.0..<360.0).contains($0) }) != false else { return nil }
+        }
         self.id = id
         self.photoID = photoID
         self.rakugakiID = rakugakiID
@@ -44,5 +69,10 @@ public struct ArExperience: Equatable, Sendable {
         self.displayWidthM = displayWidthM
         self.location = location
         self.anchorType = anchorType
+        self.worldMap = worldMap
+        self.anchorName = anchorName
+        self.worldMapFormatVersion = worldMapFormatVersion
+        self.fallbackAltitudeM = fallbackAltitudeM
+        self.fallbackHeadingDeg = fallbackHeadingDeg
     }
 }

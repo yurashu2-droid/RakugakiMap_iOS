@@ -332,3 +332,11 @@ MiniMax profile は `C:\Users\raito\.codex\minimax.config.toml` に置き、API 
 - グループ回答でも元photoの `privacy` と `draw_permission` を書き換えない。
 - グループメンバー閲覧条件は `can_view_photo` に対象photo限定で追加する。
 - 新規Storage bucketを作らず、既存private bucketとsigned URLを利用する。
+
+## 現地固定AR契約
+
+- `ar_experiences.anchor_type`: `LOCAL_PLANE` / `WORLD_MAP_V1`。
+- private bucket `ar-world-maps`: pathは`<auth.uid()>/world-maps/<uuid>.armap`、MIMEは`application/octet-stream`、上限25 MiB。公開URLをDBへ保存しない。
+- `WORLD_MAP_V1`は`world_map_path`、`anchor_name`、`world_map_format_version=1`を必須とし、任意で`fallback_altitude_m`、`fallback_heading_deg`を持つ。
+- 公開RPCは`publish_persistent_ar_experience`。写真所有者、承認済みラクガキ、Storage objectをサーバーで検証する。
+- 取得RPC `get_ar_experience`は永続ARメタデータを追加して返す。`LOCAL_PLANE`では追加列がすべて`null`である。
