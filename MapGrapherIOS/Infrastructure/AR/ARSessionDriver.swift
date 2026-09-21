@@ -141,7 +141,7 @@ final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
     }
 
     func place(at point: CGPoint) {
-        guard isRunning, let arView else { return }
+        guard isRunning, placementState != .locked, let arView else { return }
         guard let result = arView.raycast(
             from: point,
             allowing: .existingPlaneGeometry,

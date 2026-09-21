@@ -6,14 +6,17 @@ struct ProfileScreen: View {
     private let service: any SocialProfileUIService
     private let arRepository: (any ARExperienceServing)?
     private let sessionContext: SessionContext?
+    private let assetLoader: PrivateAssetLoader?
     @StateObject private var model: ProfileScreenModel
 
     init(service: any SocialProfileUIService = FakeSocialProfileUIService(),
          arRepository: (any ARExperienceServing)? = nil,
-         sessionContext: SessionContext? = nil) {
+         sessionContext: SessionContext? = nil,
+         assetLoader: PrivateAssetLoader? = nil) {
         self.service = service
         self.arRepository = arRepository
         self.sessionContext = sessionContext
+        self.assetLoader = assetLoader
         _model = StateObject(wrappedValue: ProfileScreenModel(service: service))
     }
 
@@ -119,7 +122,7 @@ struct ProfileScreen: View {
 
             NavigationLink {
                 HistoryScreen(service: service, arRepository: arRepository,
-                              sessionContext: sessionContext)
+                              sessionContext: sessionContext, assetLoader: assetLoader)
             } label: {
                 Label(AppStrings.profileHistory, systemImage: "clock.arrow.circlepath")
                     .frame(maxWidth: .infinity, alignment: .leading)

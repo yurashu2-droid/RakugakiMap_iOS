@@ -6,14 +6,17 @@ struct HistoryScreen: View {
     private let service: any SocialProfileUIService
     private let arRepository: (any ARExperienceServing)?
     private let sessionContext: SessionContext?
+    private let assetLoader: PrivateAssetLoader?
     @StateObject private var model: HistoryScreenModel
 
     init(service: any SocialProfileUIService = FakeSocialProfileUIService(),
          arRepository: (any ARExperienceServing)? = nil,
-         sessionContext: SessionContext? = nil) {
+         sessionContext: SessionContext? = nil,
+         assetLoader: PrivateAssetLoader? = nil) {
         self.service = service
         self.arRepository = arRepository
         self.sessionContext = sessionContext
+        self.assetLoader = assetLoader
         _model = StateObject(wrappedValue: HistoryScreenModel(service: service))
     }
 
@@ -55,10 +58,18 @@ struct HistoryScreen: View {
                     }
                     .accessibilityIdentifier("history.row.\(item.id.uuidString)")
                 } else if item.status.isApprovedStatus,
-                          let arRepository, let sessionContext {
+                          let arRepository, let sessionContext, let assetLoader,
+                          let imageAsset = AssetReference(
+                            bucket: "rakugakis", path: item.assetPath) {
                     NavigationLink {
-                        ARPublishSettingsScreen(photoID: item.photoID, rakugakiID: item.id,
-                                                context: sessionContext, repository: arRepository)
+                        ARPublishSettingsScreen(
+                            photoID: item.photoID,
+                            rakugakiID: item.id,
+                            imageAsset: imageAsset,
+                            context: sessionContext,
+                            repository: arRepository,
+                            imageLoader: assetLoader
+                        )
                     } label: {
                         historyRow(item)
                     }

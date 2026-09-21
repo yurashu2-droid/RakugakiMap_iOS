@@ -94,7 +94,7 @@ struct RootTabs: View {
                 }
 
             ProfileScreen(service: socialService, arRepository: arRepository,
-                          sessionContext: sessionContext)
+                          sessionContext: sessionContext, assetLoader: assetLoader)
                 .tag(AppRoute.Tab.profile)
                 .tabItem {
                     Label(AppStrings.profile, systemImage: "person.crop.circle.fill")
