@@ -154,7 +154,7 @@ final class RealPostingUIServiceTests: XCTestCase {
         XCTAssertTrue(rows.isEmpty)
     }
 
-    func testOneTapARPostRegistersPhotoDrawingAndExperienceInOrder() async throws {
+    func testARReservationReturnsPersistentPlacementAfterPhotoAndDrawing() async throws {
         let fixture = try makeFixture()
         defer { try? FileManager.default.removeItem(at: fixture.root) }
         let prepared = try await fixture.service.prepareImage(
@@ -169,25 +169,20 @@ final class RealPostingUIServiceTests: XCTestCase {
 
         try await fixture.service.saveDraft(draft)
         let rows = try await fixture.store.listPending(ownerID: fixture.context.userID)
-        XCTAssertEqual(Set(rows.map(\.kind)), Set([.photo, .rakugaki, .ar]))
+        XCTAssertEqual(Set(rows.map(\.kind)), Set([.photo, .rakugaki]))
         let drawing = try XCTUnwrap(rows.first { $0.kind == .rakugaki })
-        let ar = try XCTUnwrap(rows.first { $0.kind == .ar })
         XCTAssertEqual(drawing.dependsOn, draft.id)
-        XCTAssertEqual(ar.dependsOn, drawing.id)
         XCTAssertEqual(drawing.state, .queued)
-        XCTAssertEqual(ar.state, .queued)
-        let payload = try JSONDecoder().decode(SubmissionPayload.self, from: ar.payloadData)
-        guard case let .ar(settings) = payload else { return XCTFail("AR設定が必要です") }
-        XCTAssertEqual(settings.targetPhotoOperationID, draft.id)
-        XCTAssertEqual(settings.unlockRadiusM, 50)
-        XCTAssertEqual(settings.discoveryRadiusM, 150)
-        XCTAssertEqual(settings.displayWidthM, 1)
 
         let result = try await fixture.service.submit(draft)
         XCTAssertEqual(result.state, .completed)
         XCTAssertEqual(result.remotePhotoID, draft.id)
+        let placement = try XCTUnwrap(result.arPlacement)
+        XCTAssertEqual(placement.photoID, draft.id)
+        XCTAssertEqual(placement.rakugakiID, drawing.id)
+        XCTAssertEqual(placement.imageAsset, drawing.assetPaths.first)
         let calls = await fixture.transport.calls
-        XCTAssertEqual(calls.requests, [draft.id, drawing.id, ar.id])
+        XCTAssertEqual(calls.requests, [draft.id, drawing.id])
     }
 
     private func sampleDrawing(width: Int, height: Int) -> DrawingDocument {
