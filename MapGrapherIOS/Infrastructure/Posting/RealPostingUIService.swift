@@ -192,26 +192,6 @@ final class RealPostingUIService: PostingUIService {
             try await insertIfMissing(row, context: context)
         }
 
-        if draft.reserveAR {
-            let drawingID = Self.childID(parent: draft.id, purpose: "rakugaki")
-            let arID = Self.childID(parent: draft.id, purpose: "ar")
-            // 写真と自分のラクガキの同期完了後、既定の公開距離でARを作成する。
-            let payload = SubmissionPayload.ar(.init(
-                targetPhotoID: nil, targetPhotoOperationID: draft.id,
-                targetRakugakiID: nil, unlockRadiusM: 50,
-                discoveryRadiusM: 150, displayWidthM: 1))
-            guard let row = PendingSubmission(id: arID, ownerID: owner, schemaVersion: 1,
-                kind: .ar, payloadData: try Self.encodeStable(payload),
-                localFilePaths: [], assetPaths: [], dependsOn: drawingID,
-                remoteID: nil, state: .queued, resumeStage: .upload,
-                attemptCount: 0, nextAttemptAt: nil, lastFailure: nil,
-                leaseOwner: nil, leaseExpiresAt: nil,
-                createdAt: draft.createdAt, updatedAt: max(Date(), draft.createdAt)) else {
-                throw PostingServiceError.invalidDraft
-            }
-            try await insertIfMissing(row, context: context)
-        }
-
         guard await session.isCurrent(context) else { throw PostingServiceError.permissionDenied }
     }
 
@@ -271,8 +251,23 @@ final class RealPostingUIService: PostingUIService {
             return PostingSubmissionResult(draftID: draft.id, state: first.state,
                                            remotePhotoID: remotePhotoID)
         }
+        let placement: ARPlacementDraft?
+        if draft.reserveAR, let photoID = remotePhotoID {
+            let drawingID = Self.childID(parent: draft.id, purpose: "rakugaki")
+            let rakugakiID = try await store.completedRemoteID(
+                for: drawingID, ownerID: context.userID)
+            let path = "\(context.userID.uuidString.lowercased())/rakugakis/\(drawingID.uuidString.lowercased()).png"
+            guard let rakugakiID,
+                  let imageAsset = AssetReference(bucket: "rakugakis", path: path) else {
+                throw PostingServiceError.serviceUnavailable
+            }
+            placement = ARPlacementDraft(photoID: photoID, rakugakiID: rakugakiID,
+                                         imageAsset: imageAsset)
+        } else {
+            placement = nil
+        }
         return PostingSubmissionResult(draftID: draft.id, state: answerState ?? .completed,
-                                       remotePhotoID: remotePhotoID)
+                                       remotePhotoID: remotePhotoID, arPlacement: placement)
     }
 
     private func insertIfMissing(_ row: PendingSubmission, context: SessionContext) async throws {
@@ -315,7 +310,6 @@ final class RealPostingUIService: PostingUIService {
     private func childIDs(for draft: PostingDraft) -> [UUID] {
         var ids: [UUID] = []
         if draft.hasDrawing { ids.append(Self.childID(parent: draft.id, purpose: "rakugaki")) }
-        if draft.reserveAR { ids.append(Self.childID(parent: draft.id, purpose: "ar")) }
         return ids
     }
 

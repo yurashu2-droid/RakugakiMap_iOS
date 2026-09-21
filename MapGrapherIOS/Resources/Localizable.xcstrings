@@ -1415,7 +1415,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "AR公開を予約する"
+            "value" : "投稿後に現地へAR配置する"
           }
         }
       }
@@ -1437,7 +1437,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "投稿後に自動でAR公開します。現地の50m以内で表示できます。"
+            "value" : "写真とラクガキの送信後、そのままカメラで立体配置して公開します。"
           }
         }
       }
@@ -1448,7 +1448,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ラクガキがないため、AR公開予約は選べません。"
+            "value" : "ラクガキがないため、現地へのAR配置は選べません。"
           }
         }
       }
@@ -1591,7 +1591,7 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "写真とラクガキの送信後、AR公開まで続けて処理します。"
+            "value" : "写真とラクガキの送信後、現地のAR配置画面を開きます。"
           }
         }
       }

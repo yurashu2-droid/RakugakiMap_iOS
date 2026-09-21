@@ -85,12 +85,21 @@ struct PostingSubmissionResult: Sendable {
     let draftID: UUID
     let state: SubmissionState
     let remotePhotoID: UUID?
+    let arPlacement: ARPlacementDraft?
 
-    init(draftID: UUID, state: SubmissionState, remotePhotoID: UUID? = nil) {
+    init(draftID: UUID, state: SubmissionState, remotePhotoID: UUID? = nil,
+         arPlacement: ARPlacementDraft? = nil) {
         self.draftID = draftID
         self.state = state
         self.remotePhotoID = remotePhotoID
+        self.arPlacement = arPlacement
     }
+}
+
+struct ARPlacementDraft: Equatable, Sendable {
+    let photoID: UUID
+    let rakugakiID: UUID
+    let imageAsset: AssetReference
 }
 
 enum PostingFlowStep: String, CaseIterable, Sendable {
@@ -99,6 +108,7 @@ enum PostingFlowStep: String, CaseIterable, Sendable {
     case drawing
     case publish
     case status
+    case arPlacement
 }
 
 enum PostingFlowError: Error, Equatable, Sendable {
@@ -269,13 +279,15 @@ final class PostingFlowModel: ObservableObject {
             try await service.saveDraft(draft)
             didSaveDraft = true
             do {
-                status = try await service.submit(draft)
+                let result = try await service.submit(draft)
+                status = result
             } catch {
                 status = PostingSubmissionResult(draftID: draft.id, state: .retryWaiting)
                 self.error = .submissionFailed
             }
             isEditingSubmittedDraft = false
-            step = .status
+            step = draft.reserveAR && status?.state == .completed &&
+                status?.arPlacement != nil ? .arPlacement : .status
         } catch {
             self.error = .saveFailed
         }
@@ -329,6 +341,8 @@ final class PostingFlowModel: ObservableObject {
             needsNewOperation = true
             isEditingSubmittedDraft = true
             step = .publish
+        case .arPlacement:
+            step = .status
         }
     }
 
@@ -472,7 +486,8 @@ final class FakePostingUIService: PostingUIService {
         return PostingSubmissionResult(
             draftID: draft.id,
             state: submitResult.state,
-            remotePhotoID: submitResult.remotePhotoID
+            remotePhotoID: submitResult.remotePhotoID,
+            arPlacement: submitResult.arPlacement
         )
     }
 

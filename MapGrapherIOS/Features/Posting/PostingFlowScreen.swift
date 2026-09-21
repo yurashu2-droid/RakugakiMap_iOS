@@ -7,13 +7,22 @@ struct PostingFlowScreen: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var model: PostingFlowModel
     @State private var showsCloseDialog = false
+    private let arRepository: (any ARExperienceServing)?
+    private let imageLoader: (any ARImageLoading)?
+    private let sessionContext: SessionContext?
 
     init(
         isUITesting: Bool = false,
         service: any PostingUIService = FakePostingUIService(),
-        missionID: UUID? = nil
+        missionID: UUID? = nil,
+        arRepository: (any ARExperienceServing)? = nil,
+        imageLoader: (any ARImageLoading)? = nil,
+        sessionContext: SessionContext? = nil
     ) {
         self.isUITesting = isUITesting
+        self.arRepository = arRepository
+        self.imageLoader = imageLoader
+        self.sessionContext = sessionContext
         _model = StateObject(
             wrappedValue: PostingFlowModel(service: service, missionID: missionID)
         )
@@ -154,6 +163,24 @@ struct PostingFlowScreen: View {
                 },
                 onBack: model.goBack
             )
+        case .arPlacement:
+            if let placement = model.status?.arPlacement,
+               let arRepository, let imageLoader, let sessionContext {
+                ARPublishSettingsScreen(
+                    photoID: placement.photoID,
+                    rakugakiID: placement.rakugakiID,
+                    imageAsset: placement.imageAsset,
+                    context: sessionContext,
+                    repository: arRepository,
+                    imageLoader: imageLoader
+                )
+            } else {
+                ContentUnavailableView(
+                    "AR配置を開始できません",
+                    systemImage: "arkit",
+                    description: Text("写真は投稿済みです。プロフィールの履歴からAR配置を再開してください。")
+                )
+            }
         }
     }
 
@@ -167,7 +194,7 @@ struct PostingFlowScreen: View {
             "posting.drawing.title"
         case .publish:
             "posting.publish.title"
-        case .status:
+        case .status, .arPlacement:
             "posting.status.title"
         }
     }

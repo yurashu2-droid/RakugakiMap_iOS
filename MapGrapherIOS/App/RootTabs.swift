@@ -115,7 +115,13 @@ struct RootTabs: View {
     private func sheetView(for route: AppRoute) -> some View {
         switch route {
         case .postComposer:
-            PostingFlowScreen(isUITesting: isUITesting, service: postingService)
+            PostingFlowScreen(
+                isUITesting: isUITesting,
+                service: postingService,
+                arRepository: arRepository,
+                imageLoader: assetLoader,
+                sessionContext: sessionContext
+            )
         default:
             EmptyView()
         }
@@ -136,7 +142,13 @@ struct RootTabs: View {
                 ARProbeScreen(isUITesting: isUITesting)
             }
         case .postComposer:
-            PostingFlowScreen(isUITesting: isUITesting, service: postingService)
+            PostingFlowScreen(
+                isUITesting: isUITesting,
+                service: postingService,
+                arRepository: arRepository,
+                imageLoader: assetLoader,
+                sessionContext: sessionContext
+            )
         default:
             EmptyView()
         }
