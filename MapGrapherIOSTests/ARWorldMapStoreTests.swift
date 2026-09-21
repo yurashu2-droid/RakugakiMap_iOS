@@ -50,10 +50,10 @@ final class ARWorldMapStoreTests: XCTestCase {
             createdAt: nil)]
         let repository = ARRepository(remote: remote, photos: PersistentARTestPhotos(),
                                       session: session, worldMaps: store)
-        let package = PersistentARPackage(
+        let package = try XCTUnwrap(PersistentARPackage(
             data: Data([1, 2, 3]),
             anchorName: "rakugaki:00000000-0000-0000-0000-000000000001",
-            displayWidthM: 1, formatVersion: 1)
+            displayWidthM: 1, formatVersion: 1))
 
         do {
             _ = try await repository.publishPersistent(
