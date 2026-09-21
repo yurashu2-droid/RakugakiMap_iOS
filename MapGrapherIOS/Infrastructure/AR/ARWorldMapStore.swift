@@ -39,7 +39,7 @@ final class ARWorldMapStore: ARWorldMapStoring {
 
     func upload(package: PersistentARPackage, context: SessionContext) async throws -> AssetReference {
         guard !package.data.isEmpty, package.data.count <= Self.maxBytes,
-              package.formatVersion == ARWorldMapArchive.formatVersion else {
+              package.formatVersion == PersistentARPackage.formatVersion else {
             throw AppFailure.validation("ARワールドマップのサイズまたは形式が不正です")
         }
         try await check(context)

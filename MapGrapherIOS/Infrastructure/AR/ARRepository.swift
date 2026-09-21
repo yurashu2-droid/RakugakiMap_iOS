@@ -172,7 +172,7 @@ final class ARRepository: ARExperienceServing {
                            unlockRadiusM: Double, discoveryRadiusM: Double,
                            fallbackAltitudeM: Double?, fallbackHeadingDeg: Double?,
                            context: SessionContext) async throws -> ArExperience {
-        guard package.formatVersion == ARWorldMapArchive.formatVersion,
+        guard package.formatVersion == PersistentARPackage.formatVersion,
               package.displayWidthM.isFinite, (0.1...10).contains(package.displayWidthM),
               unlockRadiusM.isFinite, (10...200).contains(unlockRadiusM),
               discoveryRadiusM.isFinite, (30...500).contains(discoveryRadiusM),
