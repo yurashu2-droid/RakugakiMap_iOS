@@ -98,3 +98,10 @@
 - [run 35576120250](https://github.com/yurashu2-droid/RakugakiMap_iOS/actions/runs/35576120250)で公開側のCore、device build、unit/UI、IPA生成がすべて成功。閲覧・復元側も[run 35578463402](https://github.com/yurashu2-droid/RakugakiMap_iOS/actions/runs/35578463402)でCore、device build、unit/UI、IPA生成がすべて成功した。
 - 検証用クラウドSupabaseにはmigration `202609210004`まで適用済み。通常のiPhone接続先はクラウドを維持する。ローカルSupabaseはDB/RLS/migrationの自動検証に適する場合だけ起動し、今回のiOS閲覧実装では使用していない。
 - 自動検証はデータ契約・archive検証・private Storage転送・状態遷移・タイムアウト・従来互換を対象とする。同じ物理位置への復元精度はSimulatorでは判定できないため、`docs/AR_PROBE.md`のA18〜A23は未実施。
+
+## 2026-09-21 独立した空間AR落書き
+
+- 写真へ描く既存投稿とは別に、地図の「空間に描く」から全画面ARモードを開く。描画ボタンを押している間だけiPhoneのカメラ世界座標を2cm間隔で採用し、点間を丸い3D線分で表示する。
+- 色は4色、太さは1cm・3cm・6cm。一画戻し、全消去、5,000点上限を備える。カメラは既存`ARCameraLease`で排他し、退出・background・中断ではARSessionと線を破棄する。
+- Google Ink、Tilt Brush/Open Brush、Filament、ARCore iOS、Unity AR Foundationを比較した。初版の3D軌跡には直接適合しないか、既存RealityKit構成へ対して導入範囲が大きいため、追加OSSを入れずARKit・RealityKit・simdで実装する。ARCore Cloud AnchorsはAndroid/iOS間の永続配置を共通化する段階の候補として残す。
+- 点の採用・間引き・異常値・上限・undo/clear、線分の中心・長さ・向き、独立した画面導線を自動テスト対象にした。CI結果は実行完了後に追記する。物理的な空中軌跡と発熱は`docs/AR_PROBE.md`のA24〜A31で未実施。

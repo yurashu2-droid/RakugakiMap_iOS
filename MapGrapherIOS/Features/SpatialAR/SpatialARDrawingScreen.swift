@@ -22,6 +22,7 @@ struct SpatialARDrawingScreen: View {
                 header
                 Spacer()
                 statusCard
+                recoveryAction
                 brushControls
                 actionBar
             }
@@ -104,6 +105,25 @@ struct SpatialARDrawingScreen: View {
         .frame(minHeight: 44)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
         .accessibilityIdentifier("spatial-ar.status")
+    }
+
+    @ViewBuilder
+    private var recoveryAction: some View {
+        switch driver.status {
+        case .cameraDenied:
+            Button("設定でカメラを許可") {
+                guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                openURL(url)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(AppColors.coral)
+        case .cameraBusy, .interrupted, .failed:
+            Button("ARを再試行") { driver.start() }
+                .buttonStyle(.borderedProminent)
+                .tint(AppColors.coral)
+        default:
+            EmptyView()
+        }
     }
 
     private var brushControls: some View {

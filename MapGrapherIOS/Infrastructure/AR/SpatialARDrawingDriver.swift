@@ -63,6 +63,7 @@ final class SpatialARDrawingDriver: NSObject, ObservableObject, ARSessionDelegat
     func detach(view: ARView) {
         guard arView === view else { return }
         stop(resetDrawing: true)
+        arView = nil
     }
 
     func start() {
@@ -129,6 +130,7 @@ final class SpatialARDrawingDriver: NSObject, ObservableObject, ARSessionDelegat
         recorder.undo()
         completedAnchors.popLast()?.removeFromParent()
         synchronizeCounts()
+        clearPointLimitStatusIfPossible()
     }
 
     func clear() {
@@ -141,6 +143,7 @@ final class SpatialARDrawingDriver: NSObject, ObservableObject, ARSessionDelegat
         lastAcceptedPosition = nil
         activeStyle = nil
         synchronizeCounts()
+        clearPointLimitStatusIfPossible()
     }
 
     func stop(resetDrawing: Bool) {
@@ -152,7 +155,6 @@ final class SpatialARDrawingDriver: NSObject, ObservableObject, ARSessionDelegat
             arView.session.delegate = nil
             arView.session.pause()
         }
-        arView = nil
         isRunning = false
         if let leaseID = activeLeaseID {
             activeLeaseID = nil
@@ -185,6 +187,8 @@ final class SpatialARDrawingDriver: NSObject, ObservableObject, ARSessionDelegat
 
     private func runSessionIfReady() {
         guard wantsStart, activeLeaseID != nil, !isRunning, let arView else { return }
+        arView.session.delegate = self
+        arView.session.delegateQueue = .main
         let configuration = ARWorldTrackingConfiguration()
         configuration.worldAlignment = .gravity
         arView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
@@ -220,7 +224,23 @@ final class SpatialARDrawingDriver: NSObject, ObservableObject, ARSessionDelegat
         geometry: SpatialStrokeSegmentGeometry,
         color: SpatialBrushColor
     ) -> ModelEntity {
-        let mesh = MeshResource.generateCylinder(height: geometry.length, radius: geometry.radius)
+        let mesh: MeshResource
+        if #available(iOS 18.0, *) {
+            mesh = MeshResource.generateCylinder(
+                height: geometry.length,
+                radius: geometry.radius
+            )
+        } else {
+            // iOS 17では角を半径分丸めた細長いboxを使い、円柱と同じ安全な外寸にする。
+            mesh = MeshResource.generateBox(
+                size: SIMD3<Float>(
+                    geometry.radius * 2,
+                    geometry.length,
+                    geometry.radius * 2
+                ),
+                cornerRadius: geometry.radius
+            )
+        }
         let material = SimpleMaterial(color: color.uiColor, roughness: 0.32, isMetallic: false)
         let entity = ModelEntity(mesh: mesh, materials: [material])
         entity.position = geometry.center
@@ -231,6 +251,12 @@ final class SpatialARDrawingDriver: NSObject, ObservableObject, ARSessionDelegat
     private func synchronizeCounts() {
         pointCount = recorder.pointCount
         completedStrokeCount = recorder.strokes.count
+    }
+
+    private func clearPointLimitStatusIfPossible() {
+        if isRunning, status == .pointLimitReached, pointCount < recorder.maximumPointCount {
+            status = .ready
+        }
     }
 
     private func isCurrentSession(_ identifier: ObjectIdentifier) -> Bool {
