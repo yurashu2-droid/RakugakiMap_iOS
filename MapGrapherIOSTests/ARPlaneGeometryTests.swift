@@ -11,6 +11,17 @@ final class ARPlaneGeometryTests: XCTestCase {
         XCTAssertEqual(plane.heightM, 0.5, accuracy: 0.000_001)
     }
 
+    func testStandingPlaneRaisesItsCenterByHalfHeight() throws {
+        let geometry = try ARPlaneGeometry(
+            pixelWidth: 1_000,
+            pixelHeight: 500,
+            displayWidthM: 2
+        )
+
+        XCTAssertEqual(geometry.heightM, 1, accuracy: 0.000_001)
+        XCTAssertEqual(geometry.standingCenterHeightM, 0.5, accuracy: 0.000_001)
+    }
+
     func testPortraitImageKeepsAspectRatio() throws {
         let plane = try ARPlaneGeometry(
             pixelWidth: 500, pixelHeight: 1_000, displayWidthM: 0.8
