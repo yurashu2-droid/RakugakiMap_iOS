@@ -124,10 +124,14 @@ struct RootTabs: View {
     @ViewBuilder
     private func fullScreenView(for route: AppRoute) -> some View {
         switch route {
-        case .arPreview:
+        case .arPreview, .arPhoto:
             if let arRepository, let assetLoader, let sessionContext, let arSession {
                 ARExplorerFlow(repository: arRepository, assetLoader: assetLoader,
-                               session: arSession, context: sessionContext)
+                               session: arSession, context: sessionContext,
+                               targetPhotoID: {
+                                   if case .arPhoto(let id) = route { return id }
+                                   return nil
+                               }())
             } else {
                 ARProbeScreen(isUITesting: isUITesting)
             }

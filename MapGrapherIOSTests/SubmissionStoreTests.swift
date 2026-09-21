@@ -5,6 +5,53 @@ import MapGrapherCore
 
 @MainActor
 final class SubmissionStoreTests: XCTestCase {
+    func testQueuedDependentDrawingSurvivesSQLiteReopen() async throws {
+        let directory = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appendingPathComponent("queue.sqlite")
+        let parent = makeDraft(ownerID: UUID())
+        let child = try XCTUnwrap(PendingSubmission(
+            id: UUID(), ownerID: parent.ownerID, schemaVersion: 1, kind: .rakugaki,
+            payloadData: Data("drawing".utf8), localFilePaths: ["drawing.png"],
+            assetPaths: [], dependsOn: parent.id, remoteID: nil, state: .queued,
+            resumeStage: .upload, attemptCount: 0, nextAttemptAt: nil,
+            lastFailure: nil, leaseOwner: nil, leaseExpiresAt: nil,
+            createdAt: Date(), updatedAt: Date()
+        ))
+
+        do {
+            let store = try await CoreDataSubmissionStore(storeURL: url)
+            try await store.insertDraft(parent)
+            try await store.insertDraft(child)
+        }
+
+        let reopened = try await CoreDataSubmissionStore(storeURL: url)
+        let pending = try await reopened.listPending(ownerID: parent.ownerID)
+        XCTAssertEqual(pending.first(where: { $0.id == parent.id })?.state, .draft)
+        XCTAssertEqual(pending.first(where: { $0.id == child.id })?.state, .queued)
+        XCTAssertEqual(pending.first(where: { $0.id == child.id })?.dependsOn, parent.id)
+    }
+
+    func testQueuedRootWithoutDependencyIsRejected() async throws {
+        let directory = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = try await CoreDataSubmissionStore(
+            storeURL: directory.appendingPathComponent("queue.sqlite")
+        )
+        let draft = makeDraft(ownerID: UUID())
+        let queued = try XCTUnwrap(draft.replacingProgress(
+            state: .queued, resumeStage: .upload, remoteID: nil,
+            attemptCount: 0, nextAttemptAt: nil, lastFailure: nil,
+            leaseOwner: nil, leaseExpiresAt: nil, updatedAt: Date()
+        ))
+        do {
+            try await store.insertDraft(queued)
+            XCTFail("依存先のない送信待ち行は受け付けない")
+        } catch let error as SubmissionStoreError {
+            XCTAssertEqual(error, .invalidSubmission)
+        }
+    }
+
     func testSQLiteReopenRestoresOwnerAndProgress() async throws {
         let directory = temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }

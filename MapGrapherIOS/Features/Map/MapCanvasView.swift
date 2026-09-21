@@ -10,6 +10,7 @@ struct MapCanvasView: UIViewRepresentable {
     let assetLoader: PrivateAssetLoader?
     let sessionContext: SessionContext?
     let showsUserLocation: Bool
+    let usesAerialImagery: Bool
     let trackingRequest: Int
     let onSelect: (Photo) -> Void
     let onRegionSettled: (GeoPoint) -> Void
@@ -34,6 +35,9 @@ struct MapCanvasView: UIViewRepresentable {
         mapView.showsUserLocation = showsUserLocation
         mapView.isPitchEnabled = true
         mapView.isRotateEnabled = true
+        mapView.preferredConfiguration = usesAerialImagery
+            ? MKImageryMapConfiguration(elevationStyle: .realistic)
+            : MKStandardMapConfiguration(elevationStyle: .realistic)
         let camera = mapView.camera
         camera.pitch = 45
         mapView.setCamera(camera, animated: false)
@@ -48,6 +52,12 @@ struct MapCanvasView: UIViewRepresentable {
 
     func updateUIView(_ mapView: MKMapView, context: Context) {
         mapView.showsUserLocation = showsUserLocation
+        if context.coordinator.usesAerialImagery != usesAerialImagery {
+            context.coordinator.usesAerialImagery = usesAerialImagery
+            mapView.preferredConfiguration = usesAerialImagery
+                ? MKImageryMapConfiguration(elevationStyle: .realistic)
+                : MKStandardMapConfiguration(elevationStyle: .realistic)
+        }
         context.coordinator.photos = photos
         context.coordinator.onSelect = onSelect
         context.coordinator.onRegionSettled = onRegionSettled
@@ -66,6 +76,7 @@ struct MapCanvasView: UIViewRepresentable {
         var onSelect: (Photo) -> Void
         var onRegionSettled: (GeoPoint) -> Void
         var onTrackingChanged: (Bool) -> Void
+        var usesAerialImagery = false
 
         private var hasConfiguredInitialRegion = false
         private var hasStartedTracking = false

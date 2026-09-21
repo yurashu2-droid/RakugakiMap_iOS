@@ -19,6 +19,13 @@ final class MapUITests: XCTestCase {
         XCTAssertTrue(app.buttons["map.filter.all"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["map.filter.friends"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["map.filter.recent"].waitForExistence(timeout: 5))
+        let imagery = app.buttons["map.imagery.toggle"]
+        XCTAssertTrue(imagery.waitForExistence(timeout: 5))
+        XCTAssertEqual(imagery.label, "航空写真に切り替え")
+        imagery.tap()
+        XCTAssertEqual(imagery.label, "標準地図に切り替え")
+        imagery.tap()
+        XCTAssertEqual(imagery.label, "航空写真に切り替え")
 
         app.buttons[UI.photoListButton].tap()
         XCTAssertTrue(screen(UI.photoListScreen, in: app).waitForExistence(timeout: 5))

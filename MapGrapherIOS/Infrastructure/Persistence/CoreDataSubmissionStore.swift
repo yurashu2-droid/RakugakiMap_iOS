@@ -44,13 +44,24 @@ final class CoreDataSubmissionStore: SubmissionStoring, @unchecked Sendable {
 
     func insertDraft(_ submission: PendingSubmission) async throws {
         guard submission.schemaVersion == 1,
-              submission.state == .draft, submission.leaseOwner == nil,
+              submission.state == .draft ||
+                (submission.state == .queued && submission.dependsOn != nil &&
+                 submission.kind != .photo && submission.resumeStage == .upload &&
+                 submission.attemptCount == 0 && submission.nextAttemptAt == nil &&
+                 submission.lastFailure == nil),
+              submission.leaseOwner == nil, submission.leaseExpiresAt == nil,
               submission.remoteID == nil else { throw SubmissionStoreError.invalidSubmission }
         let encoded = try SubmissionSnapshot(submission).encoded()
         try await context.perform { [self] in
             let context = self.context
             guard try Self.fetch(id: submission.id, context: context) == nil else {
                 throw SubmissionStoreError.duplicateID
+            }
+            if submission.state == .queued {
+                guard let dependencyID = submission.dependsOn,
+                      let dependency = try Self.fetch(id: dependencyID, context: context),
+                      dependency.value(forKey: "ownerID") as? String == submission.ownerID.uuidString
+                else { throw SubmissionStoreError.invalidSubmission }
             }
             let record = NSEntityDescription.insertNewObject(forEntityName: "SubmissionRecord", into: context)
             Self.set(record, submission: submission, snapshot: encoded)

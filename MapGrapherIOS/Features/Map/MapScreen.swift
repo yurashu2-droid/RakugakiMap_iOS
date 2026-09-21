@@ -17,6 +17,7 @@ struct MapScreen: View {
     @State private var selectedPhoto: Photo?
     @State private var trackingRequest = 0
     @State private var isFollowingHeading = false
+    @State private var usesAerialImagery = false
 
     init(
         isUITesting: Bool = false,
@@ -54,6 +55,7 @@ struct MapScreen: View {
                     assetLoader: assetLoader,
                     sessionContext: sessionContext,
                     showsUserLocation: !isUITesting,
+                    usesAerialImagery: usesAerialImagery,
                     trackingRequest: trackingRequest,
                     onSelect: presentDetail(for:),
                     onRegionSettled: search(center:),
@@ -72,6 +74,22 @@ struct MapScreen: View {
                     Spacer()
                     HStack {
                         Spacer()
+                        Button {
+                            usesAerialImagery.toggle()
+                        } label: {
+                            Image(systemName: usesAerialImagery ? "map.fill" : "globe.americas.fill")
+                                .font(.title3.weight(.semibold))
+                                .foregroundStyle(usesAerialImagery ? AppColors.paper : AppColors.ink)
+                                .frame(width: 52, height: 52)
+                                .background(usesAerialImagery ? AppColors.coral : AppColors.paper,
+                                            in: Circle())
+                                .overlay {
+                                    Circle().stroke(AppColors.ink.opacity(0.12), lineWidth: 1)
+                                }
+                        }
+                        .accessibilityLabel(usesAerialImagery ? "標準地図に切り替え" : "航空写真に切り替え")
+                        .accessibilityIdentifier("map.imagery.toggle")
+                        .padding(.trailing, AppSpacing.small)
                         Button {
                             trackingRequest &+= 1
                         } label: {
@@ -260,7 +278,10 @@ struct MapScreen: View {
             assetLoader: assetLoader,
             sessionContext: sessionContext,
             existingPhotoRakugakiService: existingPhotoRakugakiService,
-            onOpenAR: { onPresentRoute(.arPreview) },
+            onOpenAR: {
+                sheetRoute = nil
+                onPresentRoute(.arPhoto(photo.id))
+            },
             photoService: photoService
         )
     }
