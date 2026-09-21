@@ -24,7 +24,7 @@ struct ARScreen: View {
                 ARCanvasView(driver: driver)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .accessibilityLabel("ARカメラ。床または壁をタップして配置")
+                    .accessibilityLabel("ARカメラ。面をタップして立体配置")
             } else {
                 ContentUnavailableView("現地のAR", systemImage: "arkit",
                                        description: Text(message))
@@ -47,6 +47,16 @@ struct ARScreen: View {
             }
             if model.state == .ready && !leaseGranted {
                 Button("カメラを再試行") { activateAR() }
+            }
+            if model.state == .ready && leaseGranted && driver.placementState == .editing {
+                Button("ここに固定") { driver.lockPlacement() }
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("ar.placement.lock")
+            }
+            if model.state == .ready && leaseGranted && driver.placementState == .locked {
+                Button("配置をやり直す") { driver.unlockPlacement() }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("ar.placement.redo")
             }
             Button("戻る") { close() }
         }

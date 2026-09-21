@@ -5,6 +5,12 @@ enum ARPlacementLimits {
     static let widthRange = 0.1...10.0
 }
 
+enum ARPlacementState: Equatable, Sendable {
+    case scanning
+    case editing
+    case locked
+}
+
 /// 現在のARセッション内で編集中の配置値。
 /// 永続化時は名前付きARAnchorのtransformと最終表示幅へ変換する。
 struct ARPlacement: Equatable, Sendable {
@@ -59,5 +65,46 @@ struct ARPlacement: Equatable, Sendable {
             value += fullTurn
         }
         return value - .pi
+    }
+}
+
+struct ARPlacementEditor: Equatable, Sendable {
+    private(set) var placement: ARPlacement
+    private(set) var state: ARPlacementState = .editing
+
+    init(initial: ARPlacement) {
+        placement = initial
+    }
+
+    mutating func move(to position: SIMD3<Float>) {
+        guard state == .editing,
+              let next = ARPlacement(
+                position: position,
+                yawRadians: placement.yawRadians,
+                displayWidthM: placement.displayWidthM
+              ) else {
+            return
+        }
+        placement = next
+    }
+
+    mutating func scale(by factor: Double) {
+        guard state == .editing else { return }
+        placement = placement.scaled(by: factor)
+    }
+
+    mutating func rotate(by delta: Float) {
+        guard state == .editing else { return }
+        placement = placement.rotated(by: delta)
+    }
+
+    mutating func lock() {
+        guard state == .editing else { return }
+        state = .locked
+    }
+
+    mutating func unlock() {
+        guard state == .locked else { return }
+        state = .editing
     }
 }

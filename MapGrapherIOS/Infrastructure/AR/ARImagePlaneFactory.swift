@@ -34,7 +34,15 @@ enum ARImagePlaneFactory {
         if #available(iOS 18.0, *) {
             material.faceCulling = .none
         }
-        return ModelEntity(mesh: mesh, materials: [material])
+        let entity = ModelEntity(mesh: mesh, materials: [material])
+        // generatePlaneはXZ面なので、X軸を中心に90度回して床から立たせる。
+        entity.orientation = simd_quatf(
+            angle: .pi / 2,
+            axis: SIMD3<Float>(1, 0, 0)
+        )
+        entity.position.y = Float(geometry.standingCenterHeightM)
+        entity.generateCollisionShapes(recursive: false)
+        return entity
     }
 
     /// 個人情報を含まない1000×500pxの透明な試験画像を実行時に生成する。

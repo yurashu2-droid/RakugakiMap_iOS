@@ -8,6 +8,7 @@ enum ARPlaneGeometryError: Error {
 struct ARPlaneGeometry {
     let widthM: Double
     let heightM: Double
+    var standingCenterHeightM: Double { heightM / 2 }
 
     init(pixelWidth: Double, pixelHeight: Double, displayWidthM: Double) throws {
         guard pixelWidth.isFinite, pixelHeight.isFinite, displayWidthM.isFinite,

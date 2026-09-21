@@ -2,6 +2,7 @@ import ARKit
 import AVFoundation
 import Combine
 import RealityKit
+import simd
 import UIKit
 
 @MainActor
@@ -10,11 +11,14 @@ final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
     @Published private(set) var isPrepared = false
     @Published private(set) var isRunning = false
     @Published private(set) var hasPlacement = false
+    @Published private(set) var placementState: ARPlacementState = .scanning
     @Published private(set) var permissionDenied = false
     @Published private(set) var unsupported = false
 
     private weak var arView: ARView?
     private var placement: AnchorEntity?
+    private var placementSurfaceTransform: simd_float4x4?
+    private var placementEditor: ARPlacementEditor?
     private var wantsStart = false
     private var startGeneration = 0
     private var isSceneActive = true
@@ -141,7 +145,7 @@ final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
             allowing: .existingPlaneGeometry,
             alignment: .any
         ).first,
-              let planeAnchor = result.anchor as? ARPlaneAnchor else {
+              result.anchor is ARPlaneAnchor else {
             statusText = "面を探しています。端末をゆっくり動かしてから再試行してください。"
             return
         }
@@ -150,28 +154,188 @@ final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
             let image = contentImage ?? ARImagePlaneFactory.makeFixtureImage()
             let model = try ARImagePlaneFactory.makeEntity(
                 image: image, displayWidthM: contentWidthM)
-            model.position.y = 0.002
 
             // 新しい板の準備ができてから古いanchorを除去し、常に1枚だけにする。
             resetPlacement()
-            // ARPlaneAnchorのXZ面・Y法線を採用し、交点の位置だけraycastへ合わせる。
-            var worldTransform = planeAnchor.transform
-            worldTransform.columns.3 = result.worldTransform.columns.3
+            let worldTransform = standingTransform(for: result, in: arView)
             let anchor = AnchorEntity(world: worldTransform)
             anchor.addChild(model)
             arView.scene.addAnchor(anchor)
             placement = anchor
+            placementSurfaceTransform = worldTransform
+            let position = SIMD3<Float>(
+                worldTransform.columns.3.x,
+                worldTransform.columns.3.y,
+                worldTransform.columns.3.z
+            )
+            placementEditor = ARPlacementEditor(initial: ARPlacement(
+                position: position,
+                yawRadians: 0,
+                displayWidthM: contentWidthM
+            )!)
             hasPlacement = true
-            statusText = "配置しました。別の面をタップすると再配置できます。"
+            placementState = .editing
+            statusText = "立体配置しました。ドラッグ・回転・拡大縮小して調整できます。"
         } catch {
             statusText = "透過画像を配置できませんでした。再試行してください。"
         }
     }
 
+    func movePlacement(to point: CGPoint) {
+        guard isRunning,
+              let arView,
+              var editor = placementEditor,
+              editor.state == .editing,
+              let result = arView.raycast(
+                from: point,
+                allowing: .existingPlaneGeometry,
+                alignment: .any
+              ).first,
+              result.anchor is ARPlaneAnchor else {
+            return
+        }
+        let surfaceTransform = standingTransform(for: result, in: arView)
+        editor.move(to: SIMD3<Float>(
+            surfaceTransform.columns.3.x,
+            surfaceTransform.columns.3.y,
+            surfaceTransform.columns.3.z
+        ))
+        placementEditor = editor
+        placementSurfaceTransform = surfaceTransform
+        applyPlacementTransform()
+    }
+
+    func scalePlacement(by factor: CGFloat) {
+        guard factor.isFinite,
+              factor > 0,
+              var editor = placementEditor,
+              editor.state == .editing,
+              let anchor = placement else {
+            return
+        }
+        editor.scale(by: Double(factor))
+        do {
+            let image = contentImage ?? ARImagePlaneFactory.makeFixtureImage()
+            let model = try ARImagePlaneFactory.makeEntity(
+                image: image,
+                displayWidthM: editor.placement.displayWidthM
+            )
+            for child in anchor.children {
+                child.removeFromParent()
+            }
+            anchor.addChild(model)
+            placementEditor = editor
+            contentWidthM = editor.placement.displayWidthM
+        } catch {
+            statusText = "大きさを変更できませんでした。"
+        }
+    }
+
+    func rotatePlacement(by radians: CGFloat) {
+        guard radians.isFinite,
+              var editor = placementEditor,
+              editor.state == .editing else {
+            return
+        }
+        editor.rotate(by: Float(radians))
+        placementEditor = editor
+        applyPlacementTransform()
+    }
+
+    func lockPlacement() {
+        guard var editor = placementEditor,
+              editor.state == .editing else {
+            return
+        }
+        editor.lock()
+        placementEditor = editor
+        placementState = .locked
+        statusText = "この位置に固定しました。公開前なら配置をやり直せます。"
+    }
+
+    func unlockPlacement() {
+        guard var editor = placementEditor,
+              editor.state == .locked else {
+            return
+        }
+        editor.unlock()
+        placementEditor = editor
+        placementState = .editing
+        statusText = "配置を再調整できます。"
+    }
+
     func resetPlacement() {
         placement?.removeFromParent()
         placement = nil
+        placementSurfaceTransform = nil
+        placementEditor = nil
         hasPlacement = false
+        placementState = .scanning
+    }
+
+    private func applyPlacementTransform() {
+        guard let anchor = placement,
+              let surfaceTransform = placementSurfaceTransform,
+              let editor = placementEditor else {
+            return
+        }
+        let yaw = simd_float4x4(simd_quatf(
+            angle: editor.placement.yawRadians,
+            axis: SIMD3<Float>(0, 1, 0)
+        ))
+        anchor.transform.matrix = simd_mul(surfaceTransform, yaw)
+    }
+
+    private func standingTransform(
+        for result: ARRaycastResult,
+        in view: ARView
+    ) -> simd_float4x4 {
+        let position = SIMD3<Float>(
+            result.worldTransform.columns.3.x,
+            result.worldTransform.columns.3.y,
+            result.worldTransform.columns.3.z
+        )
+        let cameraColumn = view.cameraTransform.matrix.columns.3
+        let cameraPosition = SIMD3<Float>(
+            cameraColumn.x,
+            cameraColumn.y,
+            cameraColumn.z
+        )
+        let up = SIMD3<Float>(0, 1, 0)
+        var forward: SIMD3<Float>
+
+        if let plane = result.anchor as? ARPlaneAnchor,
+           plane.alignment == .vertical {
+            let normalColumn = result.worldTransform.columns.1
+            forward = SIMD3<Float>(normalColumn.x, 0, normalColumn.z)
+            if simd_length_squared(forward) > 0.0001 {
+                forward = simd_normalize(forward)
+                let towardCamera = cameraPosition - position
+                if simd_dot(forward, towardCamera) < 0 {
+                    forward *= -1
+                }
+            }
+        } else {
+            forward = SIMD3<Float>(
+                cameraPosition.x - position.x,
+                0,
+                cameraPosition.z - position.z
+            )
+        }
+
+        if simd_length_squared(forward) <= 0.0001 {
+            forward = SIMD3<Float>(0, 0, 1)
+        } else {
+            forward = simd_normalize(forward)
+        }
+        let right = simd_normalize(simd_cross(up, forward))
+        let correctedForward = simd_normalize(simd_cross(right, up))
+        return simd_float4x4(columns: (
+            SIMD4<Float>(right.x, right.y, right.z, 0),
+            SIMD4<Float>(up.x, up.y, up.z, 0),
+            SIMD4<Float>(correctedForward.x, correctedForward.y, correctedForward.z, 0),
+            SIMD4<Float>(position.x, position.y, position.z, 1)
+        ))
     }
 
     func pause() {
