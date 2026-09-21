@@ -33,6 +33,20 @@ struct ARScreen: View {
             Text(model.state == .ready ? driver.statusText : message)
                 .font(.subheadline)
                 .frame(maxWidth: .infinity, alignment: .leading)
+            if model.persistentPackage != nil {
+                switch model.geoAvailability {
+                case .available:
+                    Label("この場所では位置情報による案内も利用できます。",
+                          systemImage: "location.fill")
+                        .font(.caption)
+                case .unavailable, .unsupported:
+                    Label("周囲の映像だけで位置を照合します。",
+                          systemImage: "viewfinder")
+                        .font(.caption)
+                case .unknown:
+                    EmptyView()
+                }
+            }
             if model.state == .locationDenied || model.state == .locationImprecise ||
                 driver.permissionDenied {
                 Button("設定を開く") {
@@ -48,15 +62,23 @@ struct ARScreen: View {
             if model.state == .ready && !leaseGranted {
                 Button("カメラを再試行") { activateAR() }
             }
-            if model.state == .ready && leaseGranted && driver.placementState == .editing {
+            if model.state == .ready && leaseGranted && !driver.isRelocalizationMode &&
+                driver.placementState == .editing {
                 Button("ここに固定") { driver.lockPlacement() }
                     .buttonStyle(.borderedProminent)
                     .accessibilityIdentifier("ar.placement.lock")
             }
-            if model.state == .ready && leaseGranted && driver.placementState == .locked {
+            if model.state == .ready && leaseGranted && !driver.isRelocalizationMode &&
+                driver.placementState == .locked {
                 Button("配置をやり直す") { driver.unlockPlacement() }
                     .buttonStyle(.bordered)
                     .accessibilityIdentifier("ar.placement.redo")
+            }
+            if model.state == .ready && leaseGranted &&
+                driver.relocalizationState == .timedOut {
+                Button("再認識する") { driver.retryRelocalization() }
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("ar.relocalization.retry")
             }
             Button("戻る") { close() }
         }
@@ -82,6 +104,7 @@ struct ARScreen: View {
         case .outsideRadius: "ARの解放地点へ近づいてください。"
         case .checking: "閲覧権限とARの公開状態を確認しています。"
         case .loadingImage: "承認済みの画像を安全に読み込んでいます。"
+        case .loadingMap: "保存したAR空間データを安全に読み込んでいます。"
         case .ready: leaseGranted ? "床または壁をタップして配置してください。" : "別のカメラ利用の終了を待っています。"
         case .unavailable: "ARを表示できません。公開状態または通信を確認して戻ってください。"
         }
@@ -105,6 +128,9 @@ struct ARScreen: View {
             }
             do {
                 try driver.setContent(image: image, displayWidthM: experience.displayWidthM)
+                if let package = model.persistentPackage {
+                    try driver.setRelocalizationPackage(package)
+                }
                 activeLeaseID = requestID
                 leaseRequestInFlight = false
                 leaseGranted = true

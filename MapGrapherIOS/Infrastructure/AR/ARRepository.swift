@@ -29,6 +29,8 @@ struct ARTrace: Identifiable, Equatable, Sendable {
 protocol ARExperienceServing {
     func experience(photoID: UUID, context: SessionContext) async throws -> ArExperience
     func nearbyTraces(at point: GeoPoint, context: SessionContext) async throws -> [ARTrace]
+    func worldMapPackage(for experience: ArExperience,
+                         context: SessionContext) async throws -> PersistentARPackage
     func publish(photoID: UUID, rakugakiID: UUID, unlockRadiusM: Double,
                  discoveryRadiusM: Double, displayWidthM: Double,
                  context: SessionContext) async throws -> ArExperience
@@ -39,6 +41,11 @@ protocol ARExperienceServing {
 }
 
 extension ARExperienceServing {
+    func worldMapPackage(for experience: ArExperience,
+                         context: SessionContext) async throws -> PersistentARPackage {
+        throw AppFailure.serviceUnavailable
+    }
+
     func publishPersistent(package: PersistentARPackage, photoID: UUID, rakugakiID: UUID,
                            unlockRadiusM: Double, discoveryRadiusM: Double,
                            fallbackAltitudeM: Double?, fallbackHeadingDeg: Double?,
@@ -139,6 +146,34 @@ final class ARRepository: ARExperienceServing {
             }
             return trace
         }
+    }
+
+    func worldMapPackage(for experience: ArExperience,
+                         context: SessionContext) async throws -> PersistentARPackage {
+        guard experience.anchorType == .worldMapV1,
+              let asset = experience.worldMap,
+              let anchorName = experience.anchorName,
+              experience.worldMapFormatVersion == PersistentARPackage.formatVersion else {
+            throw AppFailure.validation("永続ARの復元情報が不足しています")
+        }
+        try await check(context)
+        let data = try await worldMaps.download(asset: asset, context: context)
+        try await check(context)
+        do {
+            _ = try ARWorldMapArchive.decode(data, requiredAnchorName: anchorName)
+        } catch {
+            throw AppFailure.validation("AR空間データを復元できません")
+        }
+        try await check(context)
+        guard let package = PersistentARPackage(
+            data: data,
+            anchorName: anchorName,
+            displayWidthM: experience.displayWidthM,
+            formatVersion: experience.worldMapFormatVersion ?? 0
+        ) else {
+            throw AppFailure.validation("AR空間データの形式が不正です")
+        }
+        return package
     }
 
     func publish(photoID: UUID, rakugakiID: UUID, unlockRadiusM: Double,

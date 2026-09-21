@@ -20,6 +20,7 @@ enum ARViewingState: Equatable {
     case outsideRadius
     case checking
     case loadingImage
+    case loadingMap
     case ready
     case unavailable
 }
@@ -30,6 +31,8 @@ final class ARScreenModel: ObservableObject {
     @Published private(set) var state: ARViewingState = .idle
     @Published private(set) var image: UIImage?
     @Published private(set) var experience: ArExperience?
+    @Published private(set) var persistentPackage: PersistentARPackage?
+    @Published private(set) var geoAvailability: ARGeoTrackingAvailability = .unknown
 
     let trace: ARTrace
     private let context: SessionContext
@@ -37,21 +40,24 @@ final class ARScreenModel: ObservableObject {
     private let imageLoader: any ARImageLoading
     private let location: any ARLocationProviding
     private let session: any SessionProviding
+    private let geoAdvisor: any ARGeoTrackingAdvising
     private let clock: @Sendable () -> Date
     private let locationTimeout: Duration
     private var task: Task<Void, Never>?
     private var locationTimeoutTask: Task<Void, Never>?
     private var refreshTask: Task<Void, Never>?
+    private var geoTask: Task<Void, Never>?
     private var generation = UUID()
 
     init(trace: ARTrace, context: SessionContext,
          repository: any ARExperienceServing, imageLoader: any ARImageLoading,
          location: any ARLocationProviding, session: any SessionProviding,
+         geoAdvisor: any ARGeoTrackingAdvising = ARGeoTrackingAdvisor(),
          clock: @escaping @Sendable () -> Date = Date.init,
          locationTimeout: Duration = .seconds(15)) {
         self.trace = trace; self.context = context; self.repository = repository
         self.imageLoader = imageLoader; self.location = location
-        self.session = session; self.clock = clock
+        self.session = session; self.geoAdvisor = geoAdvisor; self.clock = clock
         self.locationTimeout = locationTimeout
     }
 
@@ -109,6 +115,10 @@ final class ARScreenModel: ObservableObject {
         let token = generation
         image = nil
         experience = nil
+        persistentPackage = nil
+        geoTask?.cancel()
+        geoTask = nil
+        geoAvailability = .unknown
         state = .checking
         // 再入場・前景復帰では必ず2点の連続測位からやり直す。
         guard generation == token else { return }
@@ -123,9 +133,13 @@ final class ARScreenModel: ObservableObject {
         locationTimeoutTask = nil
         refreshTask?.cancel()
         refreshTask = nil
+        geoTask?.cancel()
+        geoTask = nil
         location.stop()
         image = nil
         experience = nil
+        persistentPackage = nil
+        geoAvailability = .unknown
         state = .idle
     }
 
@@ -147,17 +161,36 @@ final class ARScreenModel: ObservableObject {
                   Self.distanceM(sample.point, fresh.location) <= fresh.unlockRadiusM else {
                 state = .outsideRadius; start(); return
             }
-            guard fresh.id == trace.id, fresh.anchorType == .localPlane else {
+            guard fresh.id == trace.id else {
                 throw AppFailure.notFound
             }
             state = .loadingImage
             let loaded = try await imageLoader.load(asset: fresh.asset,
                 targetPixelSize: CGSize(width: 4096, height: 4096), context: context)
             try await check(token)
+            let package: PersistentARPackage?
+            switch fresh.anchorType {
+            case .localPlane:
+                package = nil
+            case .worldMapV1:
+                state = .loadingMap
+                package = try await repository.worldMapPackage(for: fresh, context: context)
+                try await check(token)
+            }
             experience = fresh
             image = loaded
+            persistentPackage = package
             state = .ready
             stopLocationOnly()
+            if package != nil {
+                geoTask?.cancel()
+                geoTask = Task { [weak self] in
+                    guard let self else { return }
+                    let availability = await self.geoAdvisor.availability(at: fresh.location)
+                    guard !Task.isCancelled, self.generation == token else { return }
+                    self.geoAvailability = availability
+                }
+            }
             refreshTask = Task { [weak self] in
                 do { try await Task.sleep(for: .seconds(60)) }
                 catch { return }
@@ -168,6 +201,8 @@ final class ARScreenModel: ObservableObject {
             guard generation == token else { return }
             image = nil
             experience = nil
+            persistentPackage = nil
+            geoAvailability = .unknown
             state = .unavailable
             stopLocationOnly()
         }

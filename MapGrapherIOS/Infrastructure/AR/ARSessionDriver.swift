@@ -5,6 +5,11 @@ import RealityKit
 import simd
 import UIKit
 
+private struct ARAnchorSnapshot: @unchecked Sendable {
+    let name: String?
+    let transform: simd_float4x4
+}
+
 @MainActor
 final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
     @Published private(set) var statusText = "開始するとカメラの使用許可を確認します。"
@@ -14,6 +19,7 @@ final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
     @Published private(set) var placementState: ARPlacementState = .scanning
     @Published private(set) var canCaptureWorldMap = false
     @Published private(set) var placementDisplayWidthM: Double = 1
+    @Published private(set) var relocalizationState: ARRelocalizationState = .idle
     @Published private(set) var permissionDenied = false
     @Published private(set) var unsupported = false
 
@@ -28,6 +34,11 @@ final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
     private var permissionWasGranted = false
     private var contentImage: UIImage?
     private var contentWidthM: Double = 1
+    private var initialWorldMap: ARWorldMap?
+    private var relocalizationTracker: ARRelocalizationTracker?
+    private var relocalizationTimeoutTask: Task<Void, Never>?
+
+    var isRelocalizationMode: Bool { relocalizationTracker != nil }
 
     func setContent(image: UIImage, displayWidthM: Double) throws {
         guard let pixels = image.cgImage else { throw ARImagePlaneError.missingPixels }
@@ -42,9 +53,46 @@ final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
 
     func clearContent() {
         resetPlacement()
+        clearRelocalization()
         contentImage = nil
         contentWidthM = 1
         placementDisplayWidthM = 1
+    }
+
+    func setRelocalizationPackage(_ package: PersistentARPackage) throws {
+        resetPlacement()
+        do {
+            let worldMap = try ARWorldMapArchive.decode(
+                package.data, requiredAnchorName: package.anchorName)
+            guard let tracker = ARRelocalizationTracker(anchorName: package.anchorName) else {
+                throw ARWorldMapArchiveError.invalidAnchorName
+            }
+            initialWorldMap = worldMap
+            relocalizationTracker = tracker
+            relocalizationState = .idle
+        } catch {
+            clearRelocalization()
+            relocalizationState = .corruptMap
+            statusText = "保存したAR空間データを開けませんでした。"
+            throw error
+        }
+    }
+
+    func retryRelocalization() {
+        guard initialWorldMap != nil, relocalizationTracker != nil,
+              let arView, isSceneActive else { return }
+        relocalizationTimeoutTask?.cancel()
+        resetPlacement()
+        isRunning = false
+        runSession(on: arView)
+    }
+
+    private func clearRelocalization() {
+        relocalizationTimeoutTask?.cancel()
+        relocalizationTimeoutTask = nil
+        initialWorldMap = nil
+        relocalizationTracker = nil
+        relocalizationState = .idle
     }
 
     private func isCurrentSession(_ identifier: ObjectIdentifier) -> Bool {
@@ -128,7 +176,9 @@ final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
 
         permissionWasGranted = false
         permissionDenied = false
-        statusText = "端末をゆっくり動かして床や壁を探し、画面をタップしてください。"
+        statusText = relocalizationTracker == nil
+            ? "端末をゆっくり動かして床や壁を探し、画面をタップしてください。"
+            : "投稿時と同じ周囲をゆっくり映して、ARの位置を復元してください。"
         isPrepared = true
         if let arView {
             runSession(on: arView)
@@ -139,12 +189,39 @@ final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
         guard wantsStart, !isRunning else { return }
         let configuration = ARWorldTrackingConfiguration()
         configuration.planeDetection = [.horizontal, .vertical]
+        if let initialWorldMap, var tracker = relocalizationTracker {
+            configuration.initialWorldMap = initialWorldMap
+            tracker.start()
+            relocalizationTracker = tracker
+            relocalizationState = tracker.state
+            startRelocalizationTimeout(for: view.session)
+        }
         view.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
         isRunning = true
     }
 
+    private func startRelocalizationTimeout(for session: ARSession) {
+        relocalizationTimeoutTask?.cancel()
+        let generation = startGeneration
+        let identifier = ObjectIdentifier(session)
+        relocalizationTimeoutTask = Task { [weak self] in
+            do { try await Task.sleep(for: .seconds(25)) }
+            catch { return }
+            guard let self, self.startGeneration == generation,
+                  self.isRunning, self.isCurrentSession(identifier),
+                  var tracker = self.relocalizationTracker else { return }
+            tracker.timeout()
+            self.relocalizationTracker = tracker
+            self.relocalizationState = tracker.state
+            if tracker.state == .timedOut {
+                self.statusText = "位置を復元できませんでした。投稿時と同じ向きで周囲を映して再試行してください。"
+            }
+        }
+    }
+
     func place(at point: CGPoint) {
-        guard isRunning, placementState != .locked, let arView else { return }
+        guard isRunning, !isRelocalizationMode,
+              placementState != .locked, let arView else { return }
         guard let result = arView.raycast(
             from: point,
             allowing: .existingPlaneGeometry,
@@ -187,7 +264,7 @@ final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
     }
 
     func movePlacement(to point: CGPoint) {
-        guard isRunning,
+        guard isRunning, !isRelocalizationMode,
               let arView,
               var editor = placementEditor,
               editor.state == .editing,
@@ -211,7 +288,7 @@ final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
     }
 
     func scalePlacement(by factor: CGFloat) {
-        guard factor.isFinite,
+        guard !isRelocalizationMode, factor.isFinite,
               factor > 0,
               var editor = placementEditor,
               editor.state == .editing,
@@ -238,7 +315,7 @@ final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
     }
 
     func rotatePlacement(by radians: CGFloat) {
-        guard radians.isFinite,
+        guard !isRelocalizationMode, radians.isFinite,
               var editor = placementEditor,
               editor.state == .editing else {
             return
@@ -249,7 +326,7 @@ final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
     }
 
     func lockPlacement() {
-        guard var editor = placementEditor,
+        guard !isRelocalizationMode, var editor = placementEditor,
               editor.state == .editing else {
             return
         }
@@ -260,7 +337,7 @@ final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
     }
 
     func unlockPlacement() {
-        guard var editor = placementEditor,
+        guard !isRelocalizationMode, var editor = placementEditor,
               editor.state == .locked else {
             return
         }
@@ -411,6 +488,13 @@ final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
 
     func pause() {
         startGeneration &+= 1
+        relocalizationTimeoutTask?.cancel()
+        relocalizationTimeoutTask = nil
+        if var tracker = relocalizationTracker {
+            tracker.cancel()
+            relocalizationTracker = tracker
+            relocalizationState = tracker.state
+        }
         wantsStart = false
         permissionWasGranted = false
         resetPlacement()
@@ -467,7 +551,65 @@ final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
         }
         Task { @MainActor [weak self] in
             guard let self, self.isRunning, self.isCurrentSession(identifier) else { return }
-            self.statusText = message
+            if self.relocalizationState == .relocalizing {
+                self.statusText = "位置を復元しています。投稿時と同じ周囲をゆっくり映してください。"
+            } else if self.relocalizationState == .localized {
+                self.statusText = "投稿時の位置を復元しました。"
+            } else if self.relocalizationState == .timedOut {
+                self.statusText = "位置を復元できませんでした。再認識してください。"
+            } else {
+                self.statusText = message
+            }
+        }
+    }
+
+    nonisolated func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
+        let identifier = ObjectIdentifier(session)
+        let snapshots = anchors.map {
+            ARAnchorSnapshot(name: $0.name, transform: $0.transform)
+        }
+        Task { @MainActor [weak self] in
+            guard let self, self.isRunning, self.isCurrentSession(identifier),
+                  var tracker = self.relocalizationTracker else { return }
+            tracker.ingest(anchorNames: snapshots.map(\.name))
+            self.relocalizationTracker = tracker
+            self.relocalizationState = tracker.state
+            guard tracker.state == .localized,
+                  let anchor = snapshots.first(where: { $0.name == tracker.anchorName }) else {
+                return
+            }
+            self.relocalizationTimeoutTask?.cancel()
+            self.relocalizationTimeoutTask = nil
+            self.renderRelocalizedContent(at: anchor.transform)
+        }
+    }
+
+    private func renderRelocalizedContent(at transform: simd_float4x4) {
+        guard let arView, let image = contentImage else { return }
+        do {
+            let model = try ARImagePlaneFactory.makeEntity(
+                image: image, displayWidthM: contentWidthM)
+            placement?.removeFromParent()
+            let entity = AnchorEntity(world: transform)
+            entity.addChild(model)
+            arView.scene.addAnchor(entity)
+            placement = entity
+            placementSurfaceTransform = transform
+            let position = SIMD3<Float>(
+                transform.columns.3.x,
+                transform.columns.3.y,
+                transform.columns.3.z
+            )
+            var editor = ARPlacementEditor(initial: ARPlacement(
+                position: position, yawRadians: 0, displayWidthM: contentWidthM)!)
+            editor.lock()
+            placementEditor = editor
+            hasPlacement = true
+            placementState = .locked
+            statusText = "投稿時の位置を復元しました。"
+        } catch {
+            relocalizationState = .corruptMap
+            statusText = "保存したARを表示できませんでした。"
         }
     }
 
