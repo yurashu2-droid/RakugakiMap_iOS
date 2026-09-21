@@ -68,6 +68,43 @@ final class ARPersistentPublishModelTests: XCTestCase {
         XCTAssertEqual(model.state, .scanning)
     }
 
+    func testSecondPublishWhileCapturingIsIgnored() async throws {
+        let model = ARPersistentPublishModel()
+        let package = try makePackage()
+        let experience = try makeExperience()
+        var captureCalls = 0
+        var uploadCalls = 0
+        var resumeCapture: CheckedContinuation<Void, Never>?
+
+        let first = Task { @MainActor in
+            await model.publish(capture: {
+                captureCalls += 1
+                await withCheckedContinuation { continuation in
+                    resumeCapture = continuation
+                }
+                return package
+            }, upload: { _ in
+                uploadCalls += 1
+                return experience
+            })
+        }
+
+        while model.state != .capturing { await Task.yield() }
+        await model.publish(capture: {
+            captureCalls += 1
+            return package
+        }, upload: { _ in
+            uploadCalls += 1
+            return experience
+        })
+        resumeCapture?.resume()
+        await first.value
+
+        XCTAssertEqual(captureCalls, 1)
+        XCTAssertEqual(uploadCalls, 1)
+        XCTAssertEqual(model.state, .published)
+    }
+
     private func makePackage() throws -> PersistentARPackage {
         try XCTUnwrap(PersistentARPackage(
             data: Data([1]),

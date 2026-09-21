@@ -83,6 +83,10 @@ struct ARPublishSettingsScreen: View {
             }
 
             DisclosureGroup("公開範囲") {
+                LabeledContent(
+                    "配置した幅",
+                    value: String(format: "%.1f m", driver.placementDisplayWidthM)
+                )
                 LabeledContent("解放半径", value: "\(Int(unlockRadiusM)) m")
                 Slider(value: $unlockRadiusM, in: 10...200, step: 10)
                 LabeledContent("発見半径", value: "\(Int(discoveryRadiusM)) m")

@@ -13,6 +13,7 @@ final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
     @Published private(set) var hasPlacement = false
     @Published private(set) var placementState: ARPlacementState = .scanning
     @Published private(set) var canCaptureWorldMap = false
+    @Published private(set) var placementDisplayWidthM: Double = 1
     @Published private(set) var permissionDenied = false
     @Published private(set) var unsupported = false
 
@@ -36,12 +37,14 @@ final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
         resetPlacement()
         contentImage = image
         contentWidthM = displayWidthM
+        placementDisplayWidthM = displayWidthM
     }
 
     func clearContent() {
         resetPlacement()
         contentImage = nil
         contentWidthM = 1
+        placementDisplayWidthM = 1
     }
 
     private func isCurrentSession(_ identifier: ObjectIdentifier) -> Bool {
@@ -228,6 +231,7 @@ final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
             anchor.addChild(model)
             placementEditor = editor
             contentWidthM = editor.placement.displayWidthM
+            placementDisplayWidthM = editor.placement.displayWidthM
         } catch {
             statusText = "大きさを変更できませんでした。"
         }
