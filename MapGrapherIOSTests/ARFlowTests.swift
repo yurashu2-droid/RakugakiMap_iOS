@@ -37,11 +37,24 @@ final class ARFlowTests: XCTestCase {
         XCTAssertEqual(denied.model.state, .locationDenied)
         let reduced = makeFixture(access: .reducedAccuracy)
         reduced.model.start()
+        XCTAssertEqual(reduced.model.state, .locationImprecise)
         reduced.location.send(sample(reduced.now, accuracy: 5))
         reduced.location.send(sample(reduced.now.addingTimeInterval(1), accuracy: 5))
         try await Task.sleep(for: .milliseconds(100))
         XCTAssertEqual(reduced.model.state, .locationImprecise)
         XCTAssertEqual(reduced.loader.calls, 0)
+    }
+
+    func testNoSecondLocationSampleTimesOutAndCanRetry() async throws {
+        let fixture = makeFixture(locationTimeout: .milliseconds(50))
+        fixture.model.start()
+        fixture.location.send(sample(fixture.now, accuracy: 5))
+        try await eventually { fixture.model.state == .unavailable }
+        XCTAssertEqual(fixture.location.startCount, 1)
+
+        fixture.model.retryLocation()
+        XCTAssertEqual(fixture.model.state, .locating)
+        XCTAssertEqual(fixture.location.startCount, 2)
     }
 
     func testEpochSwitchDiscardsLateImage() async throws {
@@ -98,7 +111,8 @@ final class ARFlowTests: XCTestCase {
                        horizontalAccuracyM: accuracy, timestamp: timestamp)!
     }
 
-    private func makeFixture(access: ARLocationAccess = .allowed) -> ARFixture {
+    private func makeFixture(access: ARLocationAccess = .allowed,
+                             locationTimeout: Duration = .seconds(15)) -> ARFixture {
         let now = Date(timeIntervalSince1970: 20_000)
         let context = SessionContext(userID: UUID(), epoch: UUID())
         let point = GeoPoint(latitude: 35, longitude: 139)!
@@ -116,7 +130,7 @@ final class ARFlowTests: XCTestCase {
         let session = ARTestSession(context)
         let model = ARScreenModel(trace: trace, context: context, repository: repository,
             imageLoader: loader, location: location, session: session,
-            clock: { now.addingTimeInterval(4) })
+            clock: { now.addingTimeInterval(4) }, locationTimeout: locationTimeout)
         return ARFixture(now: now, context: context, model: model,
                          location: location, repository: repository,
                          loader: loader, session: session)
@@ -145,6 +159,7 @@ private struct ARFixture {
 @MainActor
 private final class ARTestLocation: ARLocationProviding {
     var access: ARLocationAccess
+    private(set) var startCount = 0
     private var continuation: AsyncStream<LocationSample>.Continuation?
     init(access: ARLocationAccess) { self.access = access }
     func updates() -> AsyncStream<LocationSample> {
@@ -152,7 +167,7 @@ private final class ARTestLocation: ARLocationProviding {
         continuation = pair.continuation
         return pair.stream
     }
-    func start() {}
+    func start() { startCount += 1 }
     func stop() { continuation?.finish(); continuation = nil }
     func send(_ sample: LocationSample) { continuation?.yield(sample) }
 }
