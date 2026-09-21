@@ -12,6 +12,7 @@ final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
     @Published private(set) var isRunning = false
     @Published private(set) var hasPlacement = false
     @Published private(set) var placementState: ARPlacementState = .scanning
+    @Published private(set) var canCaptureWorldMap = false
     @Published private(set) var permissionDenied = false
     @Published private(set) var unsupported = false
 
@@ -19,6 +20,7 @@ final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
     private var placement: AnchorEntity?
     private var placementSurfaceTransform: simd_float4x4?
     private var placementEditor: ARPlacementEditor?
+    private var persistentAnchor: ARAnchor?
     private var wantsStart = false
     private var startGeneration = 0
     private var isSceneActive = true
@@ -264,7 +266,73 @@ final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
         statusText = "配置を再調整できます。"
     }
 
+    func capturePersistentPackage() async throws -> PersistentARPackage {
+        guard placementState == .locked,
+              let editor = placementEditor else {
+            throw ARWorldMapCaptureError.placementNotLocked
+        }
+        guard canCaptureWorldMap else {
+            throw ARWorldMapCaptureError.mappingNotReady
+        }
+        guard isRunning,
+              isSceneActive,
+              let arView,
+              let placement else {
+            throw ARWorldMapCaptureError.sessionUnavailable
+        }
+
+        let generation = startGeneration
+        let sessionIdentifier = ObjectIdentifier(arView.session)
+        if let persistentAnchor {
+            arView.session.remove(anchor: persistentAnchor)
+        }
+        let anchorName = "rakugaki:\(UUID().uuidString.lowercased())"
+        let anchor = ARAnchor(
+            name: anchorName,
+            transform: placement.transformMatrix(relativeTo: nil)
+        )
+        arView.session.add(anchor: anchor)
+        persistentAnchor = anchor
+
+        do {
+            let worldMap = try await ARWorldMapCaptureRequest.capture(from: arView.session)
+            guard !Task.isCancelled,
+                  generation == startGeneration,
+                  isRunning,
+                  isSceneActive,
+                  self.arView === arView,
+                  isCurrentSession(sessionIdentifier) else {
+                throw ARWorldMapCaptureError.cancelled
+            }
+            let data = try ARWorldMapArchive.encode(
+                worldMap,
+                requiredAnchorName: anchorName
+            )
+            guard let package = PersistentARPackage(
+                data: data,
+                anchorName: anchorName,
+                displayWidthM: editor.placement.displayWidthM
+            ) else {
+                throw ARWorldMapCaptureError.packageInvalid
+            }
+            statusText = "空間データを保存しました。公開できます。"
+            return package
+        } catch {
+            arView.session.remove(anchor: anchor)
+            if persistentAnchor === anchor {
+                persistentAnchor = nil
+            }
+            unlockPlacement()
+            statusText = "空間データを保存できませんでした。周囲を映して再試行してください。"
+            throw error
+        }
+    }
+
     func resetPlacement() {
+        if let persistentAnchor, let arView {
+            arView.session.remove(anchor: persistentAnchor)
+        }
+        persistentAnchor = nil
         placement?.removeFromParent()
         placement = nil
         placementSurfaceTransform = nil
@@ -350,6 +418,7 @@ final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
         arView = nil
         isRunning = false
         isPrepared = false
+        canCaptureWorldMap = false
         statusText = "ARを停止しました。再開時は面を探して配置し直してください。"
     }
 
@@ -396,6 +465,19 @@ final class ARSessionDriver: NSObject, ObservableObject, ARSessionDelegate {
         Task { @MainActor [weak self] in
             guard let self, self.isRunning, self.isCurrentSession(identifier) else { return }
             self.statusText = message
+        }
+    }
+
+    nonisolated func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        let identifier = ObjectIdentifier(session)
+        let ready = frame.worldMappingStatus == .extending || frame.worldMappingStatus == .mapped
+        Task { @MainActor [weak self] in
+            guard let self,
+                  self.isRunning,
+                  self.isCurrentSession(identifier) else {
+                return
+            }
+            self.canCaptureWorldMap = ready
         }
     }
 
