@@ -16,6 +16,7 @@ enum ARViewingState: Equatable {
     case locating
     case locationDenied
     case locationImprecise
+    case locationUnavailable
     case outsideRadius
     case checking
     case loadingImage
@@ -37,22 +38,27 @@ final class ARScreenModel: ObservableObject {
     private let location: any ARLocationProviding
     private let session: any SessionProviding
     private let clock: @Sendable () -> Date
+    private let locationTimeout: Duration
     private var task: Task<Void, Never>?
+    private var locationTimeoutTask: Task<Void, Never>?
     private var refreshTask: Task<Void, Never>?
     private var generation = UUID()
 
     init(trace: ARTrace, context: SessionContext,
          repository: any ARExperienceServing, imageLoader: any ARImageLoading,
          location: any ARLocationProviding, session: any SessionProviding,
-         clock: @escaping @Sendable () -> Date = Date.init) {
+         clock: @escaping @Sendable () -> Date = Date.init,
+         locationTimeout: Duration = .seconds(15)) {
         self.trace = trace; self.context = context; self.repository = repository
         self.imageLoader = imageLoader; self.location = location
         self.session = session; self.clock = clock
+        self.locationTimeout = locationTimeout
     }
 
     func start() {
         stop()
         if location.access == .denied { state = .locationDenied; return }
+        if location.access == .reducedAccuracy { state = .locationImprecise; return }
         let token = generation
         let stream = location.updates()
         location.start()
@@ -87,7 +93,16 @@ final class ARScreenModel: ObservableObject {
             guard self.generation == token else { return }
             self.state = self.location.access == .denied ? .locationDenied : .unavailable
         }
+        locationTimeoutTask = Task { [weak self] in
+            do { try await Task.sleep(for: self?.locationTimeout ?? .seconds(15)) }
+            catch { return }
+            guard let self, self.generation == token, self.state == .locating else { return }
+            self.state = .locationUnavailable
+            self.stopLocationOnly()
+        }
     }
+
+    func retryLocation() { start() }
 
     func refresh() async {
         guard state == .ready else { return }
@@ -104,6 +119,8 @@ final class ARScreenModel: ObservableObject {
         generation = UUID()
         task?.cancel()
         task = nil
+        locationTimeoutTask?.cancel()
+        locationTimeoutTask = nil
         refreshTask?.cancel()
         refreshTask = nil
         location.stop()
@@ -113,8 +130,11 @@ final class ARScreenModel: ObservableObject {
     }
 
     private func stopLocationOnly() {
-        location.stop()
+        task?.cancel()
         task = nil
+        location.stop()
+        locationTimeoutTask?.cancel()
+        locationTimeoutTask = nil
     }
 
     private func resolve(sample: LocationSample, token: UUID) async {

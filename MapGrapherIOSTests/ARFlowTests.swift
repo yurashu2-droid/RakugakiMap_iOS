@@ -49,7 +49,7 @@ final class ARFlowTests: XCTestCase {
         let fixture = makeFixture(locationTimeout: .milliseconds(50))
         fixture.model.start()
         fixture.location.send(sample(fixture.now, accuracy: 5))
-        try await eventually { fixture.model.state == .unavailable }
+        try await eventually { fixture.model.state == .locationUnavailable }
         XCTAssertEqual(fixture.location.startCount, 1)
 
         fixture.model.retryLocation()

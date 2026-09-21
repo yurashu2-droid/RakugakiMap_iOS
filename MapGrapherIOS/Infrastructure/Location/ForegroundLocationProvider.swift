@@ -27,7 +27,9 @@ final class ForegroundLocationProvider: NSObject, CLLocationManagerDelegate, ARL
         super.init()
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyBest
-        manager.distanceFilter = 5
+        // AR解放は異なる時刻の2測位を必要とするため、静止中も更新を受け取る。
+        manager.distanceFilter = kCLDistanceFilterNone
+        manager.pausesLocationUpdatesAutomatically = false
     }
 
     var authorizationStatus: CLAuthorizationStatus { manager.authorizationStatus }

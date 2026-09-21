@@ -33,11 +33,17 @@ struct ARScreen: View {
             Text(model.state == .ready ? driver.statusText : message)
                 .font(.subheadline)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            if model.state == .locationDenied || driver.permissionDenied {
+            if model.state == .locationDenied || model.state == .locationImprecise ||
+                driver.permissionDenied {
                 Button("設定を開く") {
                     guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
                     openURL(url)
                 }
+            }
+            if model.state == .locationUnavailable {
+                Button("位置情報を再確認") { model.retryLocation() }
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("ar.location.retry")
             }
             if model.state == .ready && !leaseGranted {
                 Button("カメラを再試行") { activateAR() }
@@ -62,6 +68,7 @@ struct ARScreen: View {
         case .idle, .locating: "現地で位置を確認しています。位置情報を許可してください。"
         case .locationDenied: "位置情報が許可されていません。設定で許可してください。"
         case .locationImprecise: "正確な位置情報を許可してから再試行してください。"
+        case .locationUnavailable: "位置情報を取得できませんでした。空が見える場所へ移動して再試行してください。"
         case .outsideRadius: "ARの解放地点へ近づいてください。"
         case .checking: "閲覧権限とARの公開状態を確認しています。"
         case .loadingImage: "承認済みの画像を安全に読み込んでいます。"
