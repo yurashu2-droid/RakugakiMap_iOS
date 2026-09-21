@@ -1,4 +1,5 @@
 import SwiftUI
+import MapGrapherCore
 
 @MainActor
 struct PostingFlowScreen: View {
