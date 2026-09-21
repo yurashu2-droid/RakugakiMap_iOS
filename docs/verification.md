@@ -105,3 +105,11 @@
 - 色は4色、太さは1cm・3cm・6cm。一画戻し、全消去、5,000点上限を備える。カメラは既存`ARCameraLease`で排他し、退出・background・中断ではARSessionと線を破棄する。
 - Google Ink、Tilt Brush/Open Brush、Filament、ARCore iOS、Unity AR Foundationを比較した。初版の3D軌跡には直接適合しないか、既存RealityKit構成へ対して導入範囲が大きいため、追加OSSを入れずARKit・RealityKit・simdで実装する。ARCore Cloud AnchorsはAndroid/iOS間の永続配置を共通化する段階の候補として残す。
 - 点の採用・間引き・異常値・上限・undo/clear、線分の中心・長さ・向き、独立した画面導線を自動テスト対象にした。[run 35585549539](https://github.com/yurashu2-droid/RakugakiMap_iOS/actions/runs/35585549539)でCore、iOS 17向け署名なしdevice build、unit/UI、IPA生成がすべて成功。IPA内のcommitは`7f2a275`、SHA-256は`7cb1a0d28d78f0f43df4883e3fa04e4298f75b15135317664ad9bea56a515f0b`。物理的な空中軌跡と発熱は`docs/AR_PROBE.md`のA24〜A31で未実施。
+
+## 2026-09-21 空間AR落書きの前方ペン先
+
+- 既存の「端末位置」に加え、「前方30cm」を選ぶとカメラ姿勢から画面中央30cm先の世界座標を求め、その点をペン先として描く。中央照準を表示し、描画中はモード切替を無効にしてストロークの座標飛びを防ぐ。
+- カメラ平行移動、前方距離、回転と平行移動の合成、非有限transform拒否をunit testで検証し、画面上の2モードと前方照準をUI testで検証した。
+- [run 35596752392](https://github.com/yurashu2-droid/RakugakiMap_iOS/actions/runs/35596752392)でCore、iOS 17向け署名なしdevice build、unit/UI test、IPA生成がすべて成功。IPA内のcommitは`52f57e52cad592daf4b587a79b3f22a3009fbec2`と一致した。
+- GitHub artifact ZIPのSHA-256は`bf87d59e0d307a7716726f5dc239fa50772cb07fe34fa618950115481f3e6f3e`で画面表示のdigestと一致。IPAのSHA-256は`1efcb47f3f128bebdcf0edcb292580235143b496c26ae406e122aa852bec686d`で同梱`SHA256SUMS.txt`と一致した。iPhoneOS、最小OS 17.0、署名なしを確認した。
+- カメラ前方30cmの物理的な距離感と、端末を回したときの弧の見え方は`docs/AR_PROBE.md`のA32〜A33でiPhone実機確認を行う。
