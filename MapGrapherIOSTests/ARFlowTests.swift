@@ -15,6 +15,20 @@ final class ARFlowTests: XCTestCase {
         XCTAssertNotNil(fixture.model.image)
         XCTAssertEqual(fixture.loader.calls, 1)
         XCTAssertEqual(fixture.repository.experienceCalls, 1)
+        XCTAssertEqual(fixture.repository.worldMapCalls, 0)
+        XCTAssertNil(fixture.model.persistentPackage)
+    }
+
+    func testWorldMapExperienceLoadsPrivateMapBeforeReady() async throws {
+        let fixture = makeFixture(anchorType: .worldMapV1)
+        fixture.model.start()
+        fixture.location.send(sample(fixture.now, accuracy: 5))
+        fixture.location.send(sample(fixture.now.addingTimeInterval(1), accuracy: 5))
+        try await eventually { fixture.model.state == .ready }
+
+        XCTAssertEqual(fixture.repository.worldMapCalls, 1)
+        XCTAssertEqual(fixture.model.persistentPackage, fixture.repository.package)
+        XCTAssertNotNil(fixture.model.image)
     }
 
     func testFarInaccurateAndOldSamplesNeverUnlock() async throws {
@@ -112,20 +126,29 @@ final class ARFlowTests: XCTestCase {
     }
 
     private func makeFixture(access: ARLocationAccess = .allowed,
-                             locationTimeout: Duration = .seconds(15)) -> ARFixture {
+                             locationTimeout: Duration = .seconds(15),
+                             anchorType: ArAnchorType = .localPlane) -> ARFixture {
         let now = Date(timeIntervalSince1970: 20_000)
         let context = SessionContext(userID: UUID(), epoch: UUID())
         let point = GeoPoint(latitude: 35, longitude: 139)!
         let trace = ARTrace(id: UUID(), photoID: UUID(), location: point,
             unlockRadiusM: 50, discoveryRadiusM: 150, distanceM: 0,
-            createdAt: now, anchorType: .localPlane)!
+            createdAt: now, anchorType: anchorType)!
         let asset = AssetReference(bucket: "rakugakis", path: "owner/rakugakis/drawing.png")!
+        let anchorName = "rakugaki:00000000-0000-0000-0000-000000000001"
+        let worldMap = AssetReference(
+            bucket: "ar-world-maps", path: "owner/world-maps/map.armap")!
         let experience = ArExperience(id: trace.id, photoID: trace.photoID,
             rakugakiID: UUID(), asset: asset, unlockRadiusM: 50,
             discoveryRadiusM: 150, displayWidthM: 1, location: point,
-            anchorType: .localPlane)!
+            anchorType: anchorType,
+            worldMap: anchorType == .worldMapV1 ? worldMap : nil,
+            anchorName: anchorType == .worldMapV1 ? anchorName : nil,
+            worldMapFormatVersion: anchorType == .worldMapV1 ? 1 : nil)!
         let location = ARTestLocation(access: access)
-        let repository = ARTestRepository(experience: experience)
+        let package = PersistentARPackage(
+            data: Data([1]), anchorName: anchorName, displayWidthM: 1)!
+        let repository = ARTestRepository(experience: experience, package: package)
         let loader = ARTestImageLoader()
         let session = ARTestSession(context)
         let model = ARScreenModel(trace: trace, context: context, repository: repository,
@@ -175,13 +198,24 @@ private final class ARTestLocation: ARLocationProviding {
 @MainActor
 private final class ARTestRepository: ARExperienceServing {
     let value: ArExperience
+    let package: PersistentARPackage?
     var experienceCalls = 0
-    init(experience: ArExperience) { value = experience }
+    var worldMapCalls = 0
+    init(experience: ArExperience, package: PersistentARPackage? = nil) {
+        value = experience
+        self.package = package
+    }
     func experience(photoID: UUID, context: SessionContext) async throws -> ArExperience {
         experienceCalls += 1
         return value
     }
     func nearbyTraces(at point: GeoPoint, context: SessionContext) async throws -> [ARTrace] { [] }
+    func worldMapPackage(for experience: ArExperience,
+                         context: SessionContext) async throws -> PersistentARPackage {
+        worldMapCalls += 1
+        guard let package else { throw AppFailure.notFound }
+        return package
+    }
     func publish(photoID: UUID, rakugakiID: UUID, unlockRadiusM: Double,
                  discoveryRadiusM: Double, displayWidthM: Double,
                  context: SessionContext) async throws -> ArExperience { value }
