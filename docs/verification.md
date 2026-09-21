@@ -89,3 +89,12 @@
 - 正確な位置情報が無効なら測位通知を待たず設定案内を表示する。15秒以内に2回目を取得できなければ専用エラーと「位置情報を再確認」ボタンを出し、無限待ちを避ける。2回の異なる正確な測位を必要とする解放条件は維持する。
 - [run 35558814715](https://github.com/yurashu2-droid/RakugakiMap_iOS/actions/runs/35558814715)で、タイムアウト専用状態が終了済み測位ストリームの汎用エラーで上書きされる競合を新規unitテストが検出した。
 - 競合修正後の[run 35559570870](https://github.com/yurashu2-droid/RakugakiMap_iOS/actions/runs/35559570870)でCore、署名なしiOSビルド、AR測位のunitテスト、既存UIテスト、IPA生成がすべて成功。IPA内のcommit.txtは`8489009`と一致し、SHA-256を照合した。iPhone実機での現地AR再確認は未実施。
+
+## 2026-09-21 永続AR配置・公開・現地復元
+
+- AR付き通常投稿は、写真とラクガキの登録完了後に同じ操作の流れで現地配置画面へ進む。水平・垂直面上で移動・回転・拡大縮小し、固定後の1回の公開操作でworld mapのuploadと公開RPCを完了する。途中失敗時は取得済みpackageを保持して再送でき、二重公開を防ぐ。
+- `WORLD_MAP_V1`はprivate `ar-world-maps` bucketへsecure coding済み`ARWorldMap`を保存し、DBにはStorage path、名前付きアンカー、画像比率、表示幅を保存する。閲覧時はworld mapを復号して`initialWorldMap`へ設定し、指定名のアンカーをARKitが再認識した場合だけ同じtransformと大きさで表示する。25秒でタイムアウトし、古いsession結果を採用せず再試行できる。
+- 従来の`LOCAL_PLANE`はworld mapを取得せず、現地で面をタップして表示する互換経路を維持した。Geo Trackingの利用可否は案内に使い、world map復元の成否とは分離した。
+- [run 35576120250](https://github.com/yurashu2-droid/RakugakiMap_iOS/actions/runs/35576120250)で公開側のCore、device build、unit/UI、IPA生成がすべて成功。閲覧・復元側も[run 35578463402](https://github.com/yurashu2-droid/RakugakiMap_iOS/actions/runs/35578463402)でCore、device build、unit/UI、IPA生成がすべて成功した。
+- 検証用クラウドSupabaseにはmigration `202609210004`まで適用済み。通常のiPhone接続先はクラウドを維持する。ローカルSupabaseはDB/RLS/migrationの自動検証に適する場合だけ起動し、今回のiOS閲覧実装では使用していない。
+- 自動検証はデータ契約・archive検証・private Storage転送・状態遷移・タイムアウト・従来互換を対象とする。同じ物理位置への復元精度はSimulatorでは判定できないため、`docs/AR_PROBE.md`のA18〜A23は未実施。

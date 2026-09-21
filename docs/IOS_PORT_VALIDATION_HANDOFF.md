@@ -1,7 +1,7 @@
 # iOS版 検証・Sol high / Luna maxへの引き継ぎ
 
 作成日: 2026-09-20
-状態: 計画のみ。以下のiOSファイル、scheme、scriptはこれから作成するもの。現時点でSwiftコンパイル・AR実機検証は未実施。
+状態: 必須機能の実装と署名なしCIビルドを継続中。2026-09-21時点で、通常投稿から現地配置へ進み、private Storageの`ARWorldMap`と名前付きアンカーを使って同じ場所で復元する`WORLD_MAP_V1`を実装した。Xcode 16.4のdevice build・Simulator自動テスト・IPA生成で検証し、物理位置での復元は実機受入A18〜A23が未実施。
 
 読む順序: [設計仕様](IOS_PORT_DESIGN.md) → [実装計画](IOS_PORT_IMPLEMENTATION_PLAN.md) → 本書。旧Expo案を実装方針として使わない。
 
