@@ -5,6 +5,42 @@ import XCTest
 
 @MainActor
 final class RealPostingUIServiceTests: XCTestCase {
+    func testOrdinaryDrawingPostCompletesWithPersistentStore() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("posting-core-data-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let context = SessionContext(userID: UUID(), epoch: UUID())
+        let session = PostingTestSession(context)
+        let store = try await CoreDataSubmissionStore(
+            storeURL: root.appendingPathComponent("queue.sqlite"))
+        let transport = PostingTestTransport()
+        let coordinator = SubmissionCoordinator(store: store, session: session,
+                                                 transport: transport)
+        let service = RealPostingUIService(
+            context: context, session: session, store: store, coordinator: coordinator,
+            files: try DraftFileStore(rootURL: root.appendingPathComponent("Drafts")),
+            imagePreparer: ImagePreparer(outputDirectory: root.appendingPathComponent("Prepared")),
+            drawingExporter: DrawingExporter(outputDirectory: root.appendingPathComponent("Drawing")),
+            location: PostingTestLocation())
+        let prepared = try await service.prepareImage(
+            data: FakePostingUIService.fixtureImageData(), suggestedFilename: "camera.png")
+        var draft = PostingDraft()
+        draft.preparedImage = prepared
+        draft.title = "通常のラクガキ投稿"
+        draft.location = GeoPoint(latitude: 35, longitude: 139)
+        draft.drawing = sampleDrawing(width: prepared.prepared.pixelWidth,
+                                      height: prepared.prepared.pixelHeight)
+
+        try await service.saveDraft(draft)
+        let pending = try await store.listPending(ownerID: context.userID)
+        XCTAssertEqual(Set(pending.map(\.kind)), Set([.photo, .rakugaki]))
+        XCTAssertEqual(pending.first(where: { $0.kind == .rakugaki })?.state, .queued)
+        let result = try await service.submit(draft)
+        XCTAssertEqual(result.state, .completed)
+        let calls = await transport.calls
+        XCTAssertEqual(calls.requests.count, 2)
+    }
+
     func testSaveTwiceKeepsOneFrozenOperationAndSubmitCompletes() async throws {
         let fixture = try makeFixture()
         defer { try? FileManager.default.removeItem(at: fixture.root) }
