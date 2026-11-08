@@ -3674,6 +3674,336 @@
           }
         }
       }
+    },
+    "tab.today.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日"
+          }
+        }
+      }
+    },
+    "today.title.today" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日"
+          }
+        }
+      }
+    },
+    "today.title.rest" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "を残す"
+          }
+        }
+      }
+    },
+    "today.guest" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ゲスト"
+          }
+        }
+      }
+    },
+    "today.greeting.morning %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "おはよう、%@さん"
+          }
+        }
+      }
+    },
+    "today.greeting.day %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "こんにちは、%@さん"
+          }
+        }
+      }
+    },
+    "today.greeting.night %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "こんばんは、%@さん"
+          }
+        }
+      }
+    },
+    "today.mission.label" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日のお題"
+          }
+        }
+      }
+    },
+    "today.mission.body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "見つけた景色を、1枚の写真で残そう"
+          }
+        }
+      }
+    },
+    "today.mission.action" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "お題の写真を撮る"
+          }
+        }
+      }
+    },
+    "today.mission.deadline %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "あと%lld時間"
+          }
+        }
+      }
+    },
+    "today.mission.deadline.soon" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "まもなく締切"
+          }
+        }
+      }
+    },
+    "today.week.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今週のあしあと"
+          }
+        }
+      }
+    },
+    "today.week.summary %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld日のこした"
+          }
+        }
+      }
+    },
+    "today.week.empty" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日の1枚から"
+          }
+        }
+      }
+    },
+    "today.week.day.posted %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@曜日、のこした"
+          }
+        }
+      }
+    },
+    "today.week.day.empty %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@曜日"
+          }
+        }
+      }
+    },
+    "today.group.title %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@のお題"
+          }
+        }
+      }
+    },
+    "today.group.empty.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "グループのお題"
+          }
+        }
+      }
+    },
+    "today.group.empty.prompt" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "みんなで同じお題に答えよう"
+          }
+        }
+      }
+    },
+    "today.group.empty.meta" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "最大8人。招待して始めます"
+          }
+        }
+      }
+    },
+    "today.group.prompt.unset" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今日のお題はまだ設定されていません。"
+          }
+        }
+      }
+    },
+    "today.group.progress %lld %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld/%2$lld人が回答"
+          }
+        }
+      }
+    },
+    "today.group.answered %lld %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld/%2$lld人が回答・あなたも回答ずみ"
+          }
+        }
+      }
+    },
+    "today.nearby.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この近くの痕跡"
+          }
+        }
+      }
+    },
+    "today.nearby.body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地図で方向を探す"
+          }
+        }
+      }
+    },
+    "today.friends.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フレンド"
+          }
+        }
+      }
+    },
+    "today.friends.body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "申請と反応を見る"
+          }
+        }
+      }
+    },
+    "profile.unique-id.value %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ID：%@"
+          }
+        }
+      }
+    },
+    "profile.stats.progress %lld %lld" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld / %2$lld"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

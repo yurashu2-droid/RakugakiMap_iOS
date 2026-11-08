@@ -5,6 +5,7 @@ final class LaunchUITests: XCTestCase {
     private enum UI {
         static let launchArgument = "--ui-testing"
 
+        static let todayScreen = "screen.today"
         static let mapScreen = "screen.map"
         static let groupsScreen = "screen.groups"
         static let notificationsScreen = "screen.notifications"
@@ -16,37 +17,65 @@ final class LaunchUITests: XCTestCase {
 
     private var app: XCUIApplication!
 
-    func testLaunchesJapaneseShellWithFourTabs() throws {
+    func testLaunchesJapaneseShellWithFiveTabs() throws {
         launchApp()
 
-        XCTAssertTrue(screen(UI.mapScreen).waitForExistence(timeout: 5))
-        XCTAssertEqual(screen(UI.mapScreen).label, "地図")
+        XCTAssertTrue(screen(UI.todayScreen).waitForExistence(timeout: 5))
+        XCTAssertEqual(screen(UI.todayScreen).label, "今日")
 
-        XCTAssertEqual(app.tabBars.buttons.count, 4)
-        assertTab(label: "地図", selected: true)
-        assertTab(label: "グループ")
-        assertTab(label: "お知らせ")
-        assertTab(label: "マイページ")
+        let tabs = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "tab."))
+        XCTAssertEqual(tabs.count, 5)
+        assertTab("tab.today", label: "今日", selected: true)
+        assertTab("tab.groups", label: "グループ")
+        assertTab("tab.map", label: "地図")
+        assertTab("tab.notifications", label: "お知らせ")
+        assertTab("tab.profile", label: "マイページ")
 
         let screenshot = XCTAttachment(screenshot: app.screenshot())
-        screenshot.name = "最小shell起動画面"
+        screenshot.name = "今日の画面（起動直後）"
         screenshot.lifetime = .keepAlways
         add(screenshot)
     }
 
-    func testSwitchesBetweenFourTabs() throws {
+    func testSwitchesBetweenFiveTabs() throws {
         launchApp()
 
-        tapTab(label: "グループ", screen: UI.groupsScreen, screenLabel: "グループ")
-        tapTab(label: "お知らせ", screen: UI.notificationsScreen, screenLabel: "お知らせ")
-        tapTab(label: "マイページ", screen: UI.profileScreen, screenLabel: "マイページ")
-        tapTab(label: "地図", screen: UI.mapScreen, screenLabel: "地図")
+        tapTab("tab.groups", screen: UI.groupsScreen, screenLabel: "グループ")
+        tapTab("tab.map", screen: UI.mapScreen, screenLabel: "地図")
+        tapTab("tab.notifications", screen: UI.notificationsScreen, screenLabel: "お知らせ")
+        tapTab("tab.profile", screen: UI.profileScreen, screenLabel: "マイページ")
+        tapTab("tab.today", screen: UI.todayScreen, screenLabel: "今日")
+    }
+
+    func testTodayShortcutsOpenTheirTabs() throws {
+        launchApp()
+
+        let group = app.buttons["today.group"]
+        XCTAssertTrue(group.waitForExistence(timeout: 5))
+        group.tap()
+        XCTAssertTrue(screen(UI.groupsScreen).waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["tab.groups"].isSelected)
+
+        tapTab("tab.today", screen: UI.todayScreen, screenLabel: "今日")
+        let nearby = app.buttons["today.nearby"]
+        XCTAssertTrue(nearby.waitForExistence(timeout: 5))
+        nearby.tap()
+        XCTAssertTrue(screen(UI.mapScreen).waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["tab.map"].isSelected)
+    }
+
+    func testTodayCameraOpensPostingFlow() throws {
+        launchApp()
+
+        let camera = app.buttons["today.mission.camera"]
+        XCTAssertTrue(camera.waitForExistence(timeout: 5))
+        camera.tap()
+        XCTAssertTrue(screen("screen.posting.capture").waitForExistence(timeout: 5))
     }
 
     func testOpensARPrototypeFromMap() throws {
         launchApp()
-
-        XCTAssertTrue(screen(UI.mapScreen).waitForExistence(timeout: 5))
+        tapTab("tab.map", screen: UI.mapScreen, screenLabel: "地図")
 
         let arButton = app.buttons[UI.arPreviewButton]
         XCTAssertTrue(arButton.waitForExistence(timeout: 5))
@@ -74,8 +103,8 @@ final class LaunchUITests: XCTestCase {
             .firstMatch
     }
 
-    private func assertTab(label: String, selected: Bool = false) {
-        let tab = app.tabBars.buttons[label]
+    private func assertTab(_ identifier: String, label: String, selected: Bool = false) {
+        let tab = app.buttons[identifier]
         XCTAssertTrue(tab.waitForExistence(timeout: 5), "タブが見つかりません: \(label)")
         XCTAssertEqual(tab.label, label)
         if selected {
@@ -83,14 +112,14 @@ final class LaunchUITests: XCTestCase {
         }
     }
 
-    private func tapTab(label: String, screen screenIdentifier: String, screenLabel: String) {
-        let tab = app.tabBars.buttons[label]
-        XCTAssertTrue(tab.waitForExistence(timeout: 5), "タブが見つかりません: \(label)")
+    private func tapTab(_ identifier: String, screen screenIdentifier: String, screenLabel: String) {
+        let tab = app.buttons[identifier]
+        XCTAssertTrue(tab.waitForExistence(timeout: 5), "タブが見つかりません: \(identifier)")
         tab.tap()
 
         let destination = screen(screenIdentifier)
         XCTAssertTrue(destination.waitForExistence(timeout: 5))
         XCTAssertEqual(destination.label, screenLabel)
-        XCTAssertTrue(tab.isSelected, "選択中のタブではありません: \(label)")
+        XCTAssertTrue(tab.isSelected, "選択中のタブではありません: \(identifier)")
     }
 }

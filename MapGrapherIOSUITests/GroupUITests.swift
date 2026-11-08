@@ -7,7 +7,7 @@ final class GroupUITests: XCTestCase {
 
     func testGroupDetailShowsMissionAndAnswerEntry() throws {
         let app = launchApp()
-        app.tabBars.buttons["グループ"].tap()
+        app.buttons["tab.groups"].tap()
         XCTAssertTrue(element("screen.groups", in: app).waitForExistence(timeout: 5))
         let row = element("group.row.\(groupID)", in: app)
         XCTAssertTrue(row.waitForExistence(timeout: 5))
@@ -18,7 +18,7 @@ final class GroupUITests: XCTestCase {
 
     func testCreatesFakeGroupWithoutClaimingServerSave() throws {
         let app = launchApp()
-        app.tabBars.buttons["グループ"].tap()
+        app.buttons["tab.groups"].tap()
         app.buttons["groups.create"].tap()
         XCTAssertTrue(element("screen.group-create", in: app).waitForExistence(timeout: 5))
         let name = app.textFields["groups.create.name"]
@@ -32,7 +32,7 @@ final class GroupUITests: XCTestCase {
 
     func testNotificationExplainsUnavailableInvitationTarget() throws {
         let app = launchApp()
-        app.tabBars.buttons["お知らせ"].tap()
+        app.buttons["tab.notifications"].tap()
         XCTAssertTrue(element("screen.notifications", in: app).waitForExistence(timeout: 5))
         let row = element("notification.row.\(notificationID)", in: app)
         XCTAssertTrue(row.waitForExistence(timeout: 5))

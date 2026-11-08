@@ -56,6 +56,10 @@ final class PostingUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = [UI.launchArgument]
         app.launch()
+        // 起動直後は「今日」。地図のタブへ移ってから確かめる
+        let mapTab = app.buttons["tab.map"]
+        XCTAssertTrue(mapTab.waitForExistence(timeout: 5))
+        mapTab.tap()
         return app
     }
 

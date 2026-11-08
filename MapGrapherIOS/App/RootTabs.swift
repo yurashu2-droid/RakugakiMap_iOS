@@ -1,4 +1,6 @@
+import Combine
 import SwiftUI
+import UIKit
 import MapGrapherCore
 
 @MainActor
@@ -18,6 +20,7 @@ struct RootTabs: View {
     private let arRepository: (any ARExperienceServing)?
     private let arSession: (any SessionProviding)?
     @StateObject private var router: AppRouter
+    @State private var isKeyboardVisible = false
 
     init(
         isUITesting: Bool = false,
@@ -54,52 +57,66 @@ struct RootTabs: View {
     }
 
     var body: some View {
-        TabView(selection: $router.selectedTab) {
-            MapScreen(
-                isUITesting: isUITesting,
-                photoReader: photoReader,
-                photoRakugakiReader: photoRakugakiReader,
-                locationProvider: locationProvider,
-                assetLoader: assetLoader,
-                sessionContext: sessionContext,
-                existingPhotoRakugakiService: existingPhotoRakugakiService,
-                photoService: photoService
-            ) { route in
-                router.navigate(to: route)
+        // 標準のタブバーは隠し、案Aの浮かせたタブ（選んだタブにインクのしぶき）を下に置く。
+        // 地図の下のツールバーなどが隠れないよう、タブは画面の上に重ねず、画面の下に並べる
+        VStack(spacing: 0) {
+            TabView(selection: $router.selectedTab) {
+                TodayScreen(
+                    groupsService: groupsService,
+                    context: sessionContext,
+                    groupsDataMode: groupsDataMode,
+                    socialService: socialService,
+                    onOpenTab: { tab in router.navigate(to: .tab(tab)) },
+                    onPresentRoute: { route in router.navigate(to: route) }
+                )
+                .tag(AppRoute.Tab.today)
+                .toolbar(.hidden, for: .tabBar)
+
+                GroupListScreen(service: groupsService, context: sessionContext,
+                                dataMode: groupsDataMode, postingService: postingService,
+                                assetLoader: assetLoader,
+                                isUITesting: isUITesting)
+                    .tag(AppRoute.Tab.groups)
+                    .toolbar(.hidden, for: .tabBar)
+
+                MapScreen(
+                    isUITesting: isUITesting,
+                    photoReader: photoReader,
+                    photoRakugakiReader: photoRakugakiReader,
+                    locationProvider: locationProvider,
+                    assetLoader: assetLoader,
+                    sessionContext: sessionContext,
+                    existingPhotoRakugakiService: existingPhotoRakugakiService,
+                    photoService: photoService
+                ) { route in
+                    router.navigate(to: route)
+                }
+                .tag(AppRoute.Tab.map)
+                .toolbar(.hidden, for: .tabBar)
+
+                NotificationScreen(service: groupsService, context: sessionContext,
+                                   dataMode: groupsDataMode, postingService: postingService,
+                                   assetLoader: assetLoader,
+                                   isUITesting: isUITesting)
+                    .tag(AppRoute.Tab.notifications)
+                    .toolbar(.hidden, for: .tabBar)
+
+                ProfileScreen(service: socialService, arRepository: arRepository,
+                              sessionContext: sessionContext, assetLoader: assetLoader)
+                    .tag(AppRoute.Tab.profile)
+                    .toolbar(.hidden, for: .tabBar)
             }
-            .tag(AppRoute.Tab.map)
-            .tabItem {
-                Label(AppStrings.map, systemImage: "map.fill")
-                    .accessibilityLabel(Text(AppStrings.map))
+            // 文字を打つ間はタブをしまい、入力欄にキーボードの上を使わせる
+            if !isKeyboardVisible {
+                RakugakiTabBar(selection: $router.selectedTab)
             }
-
-            GroupListScreen(service: groupsService, context: sessionContext,
-                            dataMode: groupsDataMode, postingService: postingService,
-                            assetLoader: assetLoader,
-                            isUITesting: isUITesting)
-                .tag(AppRoute.Tab.groups)
-                .tabItem {
-                    Label(AppStrings.groups, systemImage: "person.2.fill")
-                        .accessibilityLabel(Text(AppStrings.groups))
-                }
-
-            NotificationScreen(service: groupsService, context: sessionContext,
-                               dataMode: groupsDataMode, postingService: postingService,
-                               assetLoader: assetLoader,
-                               isUITesting: isUITesting)
-                .tag(AppRoute.Tab.notifications)
-                .tabItem {
-                    Label(AppStrings.notifications, systemImage: "bell.fill")
-                        .accessibilityLabel(Text(AppStrings.notifications))
-                }
-
-            ProfileScreen(service: socialService, arRepository: arRepository,
-                          sessionContext: sessionContext, assetLoader: assetLoader)
-                .tag(AppRoute.Tab.profile)
-                .tabItem {
-                    Label(AppStrings.profile, systemImage: "person.crop.circle.fill")
-                        .accessibilityLabel(Text(AppStrings.profile))
-                }
+        }
+        .background(AppColors.paper.ignoresSafeArea())
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+            isKeyboardVisible = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            isKeyboardVisible = false
         }
         .tint(AppColors.coral)
         .background(AppColors.paper)

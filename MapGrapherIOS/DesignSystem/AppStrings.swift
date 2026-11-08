@@ -2,6 +2,7 @@ import SwiftUI
 
 @MainActor
 enum AppStrings {
+    static let today = LocalizedStringKey("tab.today.title")
     static let map = LocalizedStringKey("tab.map.title")
     static let groups = LocalizedStringKey("tab.groups.title")
     static let notifications = LocalizedStringKey("tab.notifications.title")

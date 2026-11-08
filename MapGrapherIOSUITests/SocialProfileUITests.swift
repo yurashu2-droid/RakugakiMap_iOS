@@ -4,7 +4,7 @@ import XCTest
 final class SocialProfileUITests: XCTestCase {
     private enum UI {
         static let launchArgument = "--ui-testing"
-        static let profileTab = "マイページ"
+        static let profileTab = "tab.profile"
         static let profileScreen = "screen.profile"
         static let profileEditScreen = "screen.profile.edit"
         static let friendsScreen = "screen.friends"
@@ -117,7 +117,7 @@ final class SocialProfileUITests: XCTestCase {
         app.launchArguments = [UI.launchArgument]
         app.launch()
 
-        let profileTab = app.tabBars.buttons[UI.profileTab]
+        let profileTab = app.buttons[UI.profileTab]
         XCTAssertTrue(profileTab.waitForExistence(timeout: 5))
         profileTab.tap()
         XCTAssertTrue(screen(UI.profileScreen, in: app).waitForExistence(timeout: 5))

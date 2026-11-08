@@ -6,6 +6,7 @@ final class SpatialARDrawingUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing"]
         app.launch()
+        app.buttons["tab.map"].tap()
 
         let entry = app.buttons["map.spatial-ar-drawing.button"]
         XCTAssertTrue(entry.waitForExistence(timeout: 5))
@@ -23,6 +24,7 @@ final class SpatialARDrawingUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-testing"]
         app.launch()
+        app.buttons["tab.map"].tap()
         app.buttons["map.spatial-ar-drawing.button"].tap()
 
         XCTAssertTrue(app.buttons["spatial-ar.color.coral"].waitForExistence(timeout: 5))

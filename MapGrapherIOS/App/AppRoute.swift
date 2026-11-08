@@ -2,9 +2,11 @@ import Combine
 import Foundation
 
 enum AppRoute: Hashable, Identifiable {
+    // 下のタブの並び（Androidと同じ）：今日・グループ・地図・お知らせ・マイページ
     enum Tab: String, CaseIterable, Hashable, Sendable {
-        case map
+        case today
         case groups
+        case map
         case notifications
         case profile
 
@@ -47,7 +49,7 @@ enum AppRoute: Hashable, Identifiable {
 
 @MainActor
 final class AppRouter: ObservableObject {
-    @Published var selectedTab: AppRoute.Tab = .map
+    @Published var selectedTab: AppRoute.Tab = .today
     @Published var sheetRoute: AppRoute?
     @Published var fullScreenRoute: AppRoute?
     @Published private(set) var path: [AppRoute] = []
@@ -80,6 +82,6 @@ final class AppRouter: ObservableObject {
         path.removeAll()
         sheetRoute = nil
         fullScreenRoute = nil
-        selectedTab = .map
+        selectedTab = .today
     }
 }
