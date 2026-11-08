@@ -277,3 +277,8 @@
   - このPC（Windows）ではiOSをビルドできない。ビルドもテストも未実行で、CIの結果を待つ。
   - シミュレーターと実機での見た目は、まだ見ていない。
   - AR関係のコードは変えていない。
+- CI結果（2026-11-08）:
+  - [run 42443783867](https://github.com/yurashu2-droid/RakugakiMap_iOS/actions/runs/42443783867)（commit `a860f6d`）は成功した。
+  - 成功したのは、Core、iOS 17向けの署名なしdevice build、unit/UI test（iOS 18.5シミュレーター）、IPA生成。
+  - CIの成功はシミュレーターでのテストの成功で、実機での見た目・動きの確認ではない。
+  - UIテストの画面写真（`ios-test-results`）は、まだ見ていない。
