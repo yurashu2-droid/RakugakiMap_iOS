@@ -293,3 +293,7 @@
   - 札を指で引っ張っても選べる。
 - `MapScreen`の絞り込みを差し替えた。識別子`map.filter.all / friends / recent`と選択状態は変えていない。
 - 未確認: このPCではiOSのビルドもテストもしていない（CI待ち）。見た目も確かめていない。
+- CI結果（2026-11-10、commit 4d0669f、[run 42699002401](https://github.com/yurashu2-droid/RakugakiMap_iOS/actions/runs/42699002401)）: Core、署名なしdevice build、unit/UI test、IPA生成がすべて成功。
+  - [IPA artifact](https://github.com/yurashu2-droid/RakugakiMap_iOS/actions/runs/42699002401/artifacts/13711256333)をWindowsの`.build/ipa-download/4d0669f/`へ取得。同梱SHA256と一致、`commit.txt`は4d0669f。
+  - Info.plistの接続先は検証用Supabase（`*.supabase.co`）、キーは公開キー（`sb_publishable_`）で、秘密キーは入っていない。値は記録しない。
+  - iLoaderでの署名・導入、iPhoneでの起動、絞り込みの見た目、AR実機は未確認。

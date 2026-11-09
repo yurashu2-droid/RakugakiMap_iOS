@@ -2,7 +2,7 @@
 
 写真・ラクガキ・現地ARをiPhoneで楽しむネイティブ版です。現在は基盤とAR試作を実装中で、完成アプリではありません。
 
-初回の実機用IPAを生成済みです。[検証成功run](https://github.com/yurashu2-droid/RakugakiMap_iOS/actions/runs/35516367757)の`RakugakiMap-unsigned-ipa`から取得し、iLoaderで署名・導入できます。Core/単体/UIの計48テスト成功。iPhoneへの導入とAR実機確認は未実施です。
+初回の実機用IPAを生成済みです。[検証成功run](https://github.com/yurashu2-droid/RakugakiMap_iOS/actions/runs/42699002401)の`RakugakiMap-unsigned-ipa`から取得し、iLoaderで署名・導入できます。Core/単体/UIの計48テスト成功。iPhoneへの導入とAR実機確認は未実施です。
 
 - iOS 17以上 / Swift 6 / SwiftUI
 - ARKit + RealityKit（ARは初回版から必須、LiDARは必須にしない）
