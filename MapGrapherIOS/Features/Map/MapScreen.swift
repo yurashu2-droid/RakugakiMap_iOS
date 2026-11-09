@@ -176,32 +176,18 @@ struct MapScreen: View {
         .accessibilityLabel(Text(AppStrings.map))
     }
 
+    // 選んでいる札は色の角丸。押すと伸び縮みしながら転がり、色が移り変わる（JellyFilterBar）
     private var filterBar: some View {
-        HStack(spacing: AppSpacing.small) {
-            ForEach(PhotoFilter.allCases) { filter in
-                Button(filter.titleKey) {
-                    model.selectFilter(filter)
-                }
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(
-                    model.selectedFilter == filter ? AppColors.paper : AppColors.ink
-                )
-                .padding(.horizontal, AppSpacing.medium)
-                .frame(minHeight: 44)
-                .background(
-                    model.selectedFilter == filter ? AppColors.coral : AppColors.paper,
-                    in: Capsule()
-                )
-                .overlay {
-                    Capsule()
-                        .stroke(AppColors.ink.opacity(0.12), lineWidth: 1)
-                }
-                .accessibilityIdentifier("map.filter.\(filter.rawValue == "recent24Hours" ? "recent" : filter.rawValue)")
-                .accessibilityAddTraits(model.selectedFilter == filter ? .isSelected : [])
-            }
+        JellyFilterBar(
+            segments: PhotoFilter.allCases.map { filter in
+                JellyFilterBar<PhotoFilter>.Segment(item: filter, title: filter.titleKey, color: filter.pillColor,
+                      identifier: "map.filter.\(filter.rawValue == "recent24Hours" ? "recent" : filter.rawValue)")
+            },
+            selection: model.selectedFilter
+        ) { filter in
+            model.selectFilter(filter)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .contain)
+        .frame(maxWidth: .infinity)
         .accessibilityIdentifier("map.filters")
     }
 
@@ -395,6 +381,18 @@ private extension PhotoFilter {
             "map.filter.friends"
         case .recent24Hours:
             "map.filter.recent"
+        }
+    }
+
+    /// 選んでいる札の色。すべては朱、フレンドは藤、24時間は黄（Androidと同じ）
+    var pillColor: Color {
+        switch self {
+        case .all:
+            AppColors.shu
+        case .friends:
+            AppColors.fuji
+        case .recent24Hours:
+            AppColors.yellow
         }
     }
 }
