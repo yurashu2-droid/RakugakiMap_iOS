@@ -27,6 +27,8 @@ enum AppColors {
     static let surface = dynamic(light: 0xFFFFFF, dark: 0x242738)
     static let muted = dynamic(light: 0x6F7080, dark: 0xC6C3CE)
     static let outline = dynamic(light: 0xE4DEDA, dark: 0x464A5D)
+    /// 文字だけのボタンやリンクの色。標準の青の代わりに使う（昼は濃い藤、夜は明るい藤）
+    static let link = dynamic(light: 0x7356B6, dark: 0xC3B1F7)
 
     private static func fixed(_ hex: UInt32) -> Color {
         Color(uiColor: uiColor(hex))

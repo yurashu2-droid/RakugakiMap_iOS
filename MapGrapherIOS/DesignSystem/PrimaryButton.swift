@@ -20,15 +20,16 @@ struct PrimaryButton<Label: View>: View {
             Group {
                 if isLoading {
                     ProgressView()
-                        .tint(AppColors.paper)
+                        .tint(AppColors.ink)
                         .accessibilityLabel(Text("state.loading"))
                 } else {
                     label
                 }
             }
-            .frame(maxWidth: .infinity, minHeight: 48)
+            .frame(maxWidth: .infinity)
         }
-        .buttonStyle(AppPrimaryButtonStyle())
+        // 案Aの主ボタン（明るい朱の面と、下に見える縁）
+        .buttonStyle(RakugakiPrimaryButtonStyle())
         .disabled(isLoading)
         .accessibilityAddTraits(isLoading ? .isStaticText : [])
     }

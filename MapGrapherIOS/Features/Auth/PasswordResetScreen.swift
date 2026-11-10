@@ -16,7 +16,7 @@ struct PasswordResetScreen: View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.xLarge) {
                 Text(AuthStrings.passwordResetTitle)
-                    .font(.largeTitle.weight(.bold))
+                    .font(.system(size: 30, weight: .heavy, design: .rounded))
                     .foregroundStyle(AppColors.ink)
 
                 Text(AuthStrings.resetSentDetail)
@@ -29,9 +29,9 @@ struct PasswordResetScreen: View {
                     .keyboardType(.emailAddress)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
-                    .textFieldStyle(.roundedBorder)
                     .accessibilityIdentifier("auth.email")
                     .accessibilityLabel(Text(AuthStrings.email))
+                    .rakugakiField()
 
                 PrimaryButton(isLoading: model.isSubmitting) {
                     Task { @MainActor in
@@ -52,7 +52,6 @@ struct PasswordResetScreen: View {
             .padding(.vertical, AppSpacing.section)
         }
         .background(AppColors.paper.ignoresSafeArea())
-        .navigationTitle(AuthStrings.passwordResetTitle)
         .navigationBarTitleDisplayMode(.inline)
         .accessibilityIdentifier("screen.auth.password-reset")
         .accessibilityLabel(Text(AuthStrings.passwordResetTitle))

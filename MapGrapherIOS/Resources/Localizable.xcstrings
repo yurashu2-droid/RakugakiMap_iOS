@@ -221,6 +221,39 @@
         }
       }
     },
+    "auth.welcome.greeting" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ようこそ"
+          }
+        }
+      }
+    },
+    "auth.welcome.brand" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ラクガキマップ"
+          }
+        }
+      }
+    },
+    "auth.other-methods" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ほかの方法で続ける"
+          }
+        }
+      }
+    },
     "auth.sign-in" : {
       "extractionState" : "manual",
       "localizations" : {

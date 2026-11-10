@@ -22,7 +22,7 @@ struct SignInScreen: View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.xLarge) {
                 Text(AuthStrings.signInTitle)
-                    .font(.largeTitle.weight(.bold))
+                    .font(.system(size: 30, weight: .heavy, design: .rounded))
                     .foregroundStyle(AppColors.ink)
 
                 VStack(alignment: .leading, spacing: AppSpacing.medium) {
@@ -31,15 +31,15 @@ struct SignInScreen: View {
                         .keyboardType(.emailAddress)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-                        .textFieldStyle(.roundedBorder)
                         .accessibilityIdentifier("auth.email")
                         .accessibilityLabel(Text(AuthStrings.email))
+                        .rakugakiField()
 
                     SecureField(AuthStrings.password, text: $password)
                         .textContentType(.password)
-                        .textFieldStyle(.roundedBorder)
                         .accessibilityIdentifier("auth.password")
                         .accessibilityLabel(Text(AuthStrings.password))
+                        .rakugakiField()
                 }
 
                 PrimaryButton(isLoading: model.isSubmitting) {
@@ -84,7 +84,6 @@ struct SignInScreen: View {
             .padding(.vertical, AppSpacing.section)
         }
         .background(AppColors.paper.ignoresSafeArea())
-        .navigationTitle(AuthStrings.signInTitle)
         .navigationBarTitleDisplayMode(.inline)
         .accessibilityIdentifier("screen.auth.sign-in")
         .accessibilityLabel(Text(AuthStrings.signInTitle))

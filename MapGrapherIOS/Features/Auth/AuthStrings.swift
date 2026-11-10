@@ -4,6 +4,9 @@ import SwiftUI
 enum AuthStrings {
     static let welcomeTitle = LocalizedStringKey("auth.welcome.title")
     static let welcomeDetail = LocalizedStringKey("auth.welcome.detail")
+    static let welcomeGreeting = LocalizedStringKey("auth.welcome.greeting")
+    static let welcomeBrand = LocalizedStringKey("auth.welcome.brand")
+    static let otherMethods = LocalizedStringKey("auth.other-methods")
     static let signIn = LocalizedStringKey("auth.sign-in")
     static let signUp = LocalizedStringKey("auth.sign-up")
     static let passwordReset = LocalizedStringKey("auth.password-reset")

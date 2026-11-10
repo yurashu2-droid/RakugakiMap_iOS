@@ -24,36 +24,36 @@ struct SignUpScreen: View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.xLarge) {
                 Text(AuthStrings.signUpTitle)
-                    .font(.largeTitle.weight(.bold))
+                    .font(.system(size: 30, weight: .heavy, design: .rounded))
                     .foregroundStyle(AppColors.ink)
 
                 VStack(alignment: .leading, spacing: AppSpacing.medium) {
                     TextField(AuthStrings.displayName, text: $displayName)
                         .textContentType(.name)
-                        .textFieldStyle(.roundedBorder)
                         .accessibilityIdentifier("auth.display-name")
                         .accessibilityLabel(Text(AuthStrings.displayName))
+                        .rakugakiField()
 
                     TextField(AuthStrings.email, text: $email)
                         .textContentType(.emailAddress)
                         .keyboardType(.emailAddress)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-                        .textFieldStyle(.roundedBorder)
                         .accessibilityIdentifier("auth.email")
                         .accessibilityLabel(Text(AuthStrings.email))
+                        .rakugakiField()
 
                     SecureField(AuthStrings.password, text: $password)
                         .textContentType(.newPassword)
-                        .textFieldStyle(.roundedBorder)
                         .accessibilityIdentifier("auth.password")
                         .accessibilityLabel(Text(AuthStrings.password))
+                        .rakugakiField()
 
                     SecureField(AuthStrings.passwordConfirmation, text: $passwordConfirmation)
                         .textContentType(.newPassword)
-                        .textFieldStyle(.roundedBorder)
                         .accessibilityIdentifier("auth.password-confirmation")
                         .accessibilityLabel(Text(AuthStrings.passwordConfirmation))
+                        .rakugakiField()
                 }
 
                 PrimaryButton(isLoading: model.isSubmitting) {
@@ -89,7 +89,6 @@ struct SignUpScreen: View {
             .padding(.vertical, AppSpacing.section)
         }
         .background(AppColors.paper.ignoresSafeArea())
-        .navigationTitle(AuthStrings.signUpTitle)
         .navigationBarTitleDisplayMode(.inline)
         .accessibilityIdentifier("screen.auth.sign-up")
         .accessibilityLabel(Text(AuthStrings.signUpTitle))

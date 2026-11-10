@@ -297,3 +297,17 @@
   - [IPA artifact](https://github.com/yurashu2-droid/RakugakiMap_iOS/actions/runs/42699002401/artifacts/13711256333)をWindowsの`.build/ipa-download/4d0669f/`へ取得。同梱SHA256と一致、`commit.txt`は4d0669f。
   - Info.plistの接続先は検証用Supabase（`*.supabase.co`）、キーは公開キー（`sb_publishable_`）で、秘密キーは入っていない。値は記録しない。
   - iLoaderでの署名・導入、iPhoneでの起動、絞り込みの見た目、AR実機は未確認。
+
+## 2026-11-11 最初の画面とログインまわりを案Aにそろえる（iOS）
+
+- きっかけ: iPhoneに入れた利用者から、最初の画面（ログインの入口）の見た目がひどいと指摘があった。題名が二重、ボタンの形と高さがばらばら、標準の青い文字、下半分が空いていた。
+- `WelcomeScreen`を作り直した。
+  - 題名の帯を消し、上端から出る藤の帯（下の辺が斜め）に、写真の枠・朱のラクガキ・黄のピンの絵と「ラクガキマップ」を置いた。
+  - ボタンは高さと角丸をそろえ、下に寄せた。順番は、新規登録（朱の主ボタン）、ログイン（淡い藤）、「ほかの方法で続ける」の下にGoogleとApple、最後にパスワードの再設定。
+  - Appleは標準のボタンのまま、形と高さだけそろえた。識別子（`auth.*`、`screen.auth.welcome`）は変えていない。
+- ログイン・新規登録・パスワード再設定の入力画面は、二重の題名を消し、入力欄を白い角丸の面にした。
+- 初回のプロフィール設定は、標準のフォームから同じ並びの画面に変えた。識別子（`profile.*`、`screen.profile.setup`）は変えていない。
+- `PrimaryButton`を案Aの主ボタン（明るい朱と縁）にした。アルバムとプロフィール編集の送信ボタンも同じ見た目になる。
+- 足したもの: `DesignSystem/RakugakiControls.swift`（脇役のボタン、入力欄、斜めの帯）、`AppColors.link`、文言3つ。
+- `AuthUITests`で、最初の画面・ログイン・新規登録の画面写真をテスト結果に残すようにした。
+- 未確認: このPCではビルドしていない（CI待ち）。iPhoneでの見た目は未確認。

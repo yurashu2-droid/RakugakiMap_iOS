@@ -45,36 +45,67 @@ struct ProfileBootstrapView: View {
     }
 
     private var setupForm: some View {
-        NavigationStack {
-            Form {
-                Section {
+        // ログイン・新規登録の入力画面と同じ並び（題名、入力欄、主ボタン、文字だけのボタン）
+        ScrollView {
+            VStack(alignment: .leading, spacing: AppSpacing.xLarge) {
+                VStack(alignment: .leading, spacing: AppSpacing.small) {
+                    Text("プロフィールを決めよう")
+                        .font(.system(size: 30, weight: .heavy, design: .rounded))
+                        .foregroundStyle(AppColors.ink)
+                    Text("地図やグループで、ほかの人に見える名前です。")
+                        .font(.subheadline)
+                        .foregroundStyle(AppColors.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                VStack(alignment: .leading, spacing: AppSpacing.medium) {
                     TextField("表示名", text: $displayName)
                         .textContentType(.nickname)
                         .accessibilityIdentifier("profile.display-name")
+                        .rakugakiField()
                     TextField("公開ID", text: $uniqueID)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .accessibilityIdentifier("profile.unique-id")
-                } footer: {
+                        .rakugakiField()
                     Text("公開IDは英数字・_・.の3〜32文字です。")
+                        .font(.footnote)
+                        .foregroundStyle(AppColors.muted)
                 }
+
                 if case .failed(let message) = model.state {
-                    Section { Text(message).foregroundStyle(.red) }
+                    Label(message, systemImage: "exclamationmark.triangle.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(AppColors.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(AppSpacing.large)
+                        .background(AppColors.shuTint, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                 }
-                Section {
-                    Button("始める") {
-                        Task { await model.submit(displayName: displayName, uniqueID: uniqueID) }
-                    }
-                    .disabled(model.state == .saving)
-                    .accessibilityIdentifier("profile.submit")
+
+                PrimaryButton(isLoading: model.state == .saving) {
+                    Task { await model.submit(displayName: displayName, uniqueID: uniqueID) }
+                } label: {
+                    Text("始める")
+                }
+                .accessibilityIdentifier("profile.submit")
+
+                HStack(spacing: AppSpacing.xLarge) {
                     if case .failed = model.state {
                         Button("接続を再確認") { Task { await model.load() } }
+                            .frame(minHeight: 44)
                     }
                     Button("ログアウト") { Task { try? await container.session.signOut() } }
+                        .frame(minHeight: 44)
                 }
+                .font(.footnote.weight(.bold))
+                .frame(maxWidth: .infinity)
             }
-            .navigationTitle("プロフィール設定")
-            .accessibilityIdentifier("screen.profile.setup")
+            .padding(.horizontal, AppSpacing.xLarge)
+            .padding(.vertical, AppSpacing.section)
         }
+        .background(AppColors.paper.ignoresSafeArea())
+        .tint(AppColors.link)
+        .accessibilityIdentifier("screen.profile.setup")
     }
 }

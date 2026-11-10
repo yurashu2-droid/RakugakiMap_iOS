@@ -32,6 +32,8 @@ final class AuthUITests: XCTestCase {
         XCTAssertTrue(app.buttons[UI.signIn].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons[UI.signUp].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons[UI.passwordReset].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["auth.google"].exists)
+        attachScreenshot(of: app, named: "最初の画面")
     }
 
     func testSignInFormExposesStableFieldsAndValidation() throws {
@@ -45,6 +47,7 @@ final class AuthUITests: XCTestCase {
         let password = app.secureTextFields[UI.password]
         XCTAssertTrue(email.waitForExistence(timeout: 5))
         XCTAssertTrue(password.waitForExistence(timeout: 5))
+        attachScreenshot(of: app, named: "ログインの画面")
 
         email.tap()
         email.typeText("not-an-email")
@@ -65,6 +68,15 @@ final class AuthUITests: XCTestCase {
         XCTAssertTrue(app.textFields[UI.email].waitForExistence(timeout: 5))
         XCTAssertTrue(app.secureTextFields[UI.password].waitForExistence(timeout: 5))
         XCTAssertTrue(app.secureTextFields[UI.passwordConfirmation].waitForExistence(timeout: 5))
+        attachScreenshot(of: app, named: "新規登録の画面")
+    }
+
+    /// 見た目を後から目で確かめられるよう、画面写真をテスト結果に残す
+    private func attachScreenshot(of app: XCUIApplication, named name: String) {
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = name
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
     }
 
     func testPasswordResetShowsSentStateForFakeService() throws {
