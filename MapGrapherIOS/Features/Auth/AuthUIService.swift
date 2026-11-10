@@ -24,6 +24,14 @@ enum AuthUIError: Error, Equatable, Sendable {
     case emailAlreadyRegistered
     case emailNotConfirmed
     case serviceUnavailable
+    /// 端末がインターネットにつながっていない
+    case offline
+    /// 接続先のサーバーが見つからない（止まっている、一時停止しているなど）
+    case serverUnreachable
+    /// 確認メールを送れる回数の上限に達した
+    case emailRateLimited
+    /// そのメールアドレスには確認メールを送れない
+    case emailNotAllowed
     case unknown
 }
 

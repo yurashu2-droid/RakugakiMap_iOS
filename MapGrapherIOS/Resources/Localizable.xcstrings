@@ -529,6 +529,50 @@
         }
       }
     },
+    "auth.error.offline" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "インターネットにつながっていません。通信を確かめてください。"
+          }
+        }
+      }
+    },
+    "auth.error.server-unreachable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サーバーが見つかりません。サーバーが止まっている可能性があります。"
+          }
+        }
+      }
+    },
+    "auth.error.email-rate-limited" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "確認メールを送れる回数の上限に達しました。時間を置いて試してください。"
+          }
+        }
+      }
+    },
+    "auth.error.email-not-allowed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このメールアドレスには確認メールを送れません。別のアドレスを試してください。"
+          }
+        }
+      }
+    },
     "auth.error.unknown" : {
       "extractionState" : "manual",
       "localizations" : {

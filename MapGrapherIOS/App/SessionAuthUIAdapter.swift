@@ -45,15 +45,39 @@ final class SessionAuthUIAdapter: AuthUIService {
         catch { throw map(error) }
     }
 
-    private func map(_ error: Error) -> AuthUIError {
+    private func map(_ error: Error) -> AuthUIError { Self.map(error) }
+
+    /// 通信やSupabaseのエラーを、画面に出す理由へ振り分ける。原因が分かるものは「不明」にしない
+    nonisolated static func map(_ error: Error) -> AuthUIError {
         if let failure = error as? AppFailure {
             switch failure {
-            case .offline, .serviceUnavailable, .rateLimited: return .serviceUnavailable
+            case .offline: return .offline
+            case .serviceUnavailable, .rateLimited: return .serviceUnavailable
             case .needsLogin: return .invalidCredentials
             default: return .unknown
             }
         }
+        // 通信そのものの失敗。接続先の名前が引けないときは、サーバーが止まっている（一時停止など）
+        let nsError = error as NSError
+        if nsError.domain == NSURLErrorDomain {
+            switch nsError.code {
+            case NSURLErrorNotConnectedToInternet, NSURLErrorDataNotAllowed, NSURLErrorInternationalRoamingOff:
+                return .offline
+            case NSURLErrorCannotFindHost, NSURLErrorDNSLookupFailed:
+                return .serverUnreachable
+            default:
+                return .serviceUnavailable
+            }
+        }
         let description = String(describing: error).lowercased()
+        if description.contains("over_email_send_rate_limit") || description.contains("email rate limit") {
+            return .emailRateLimited
+        }
+        if description.contains("email_address_not_authorized")
+            || description.contains("email address not authorized")
+            || description.contains("email_address_invalid") {
+            return .emailNotAllowed
+        }
         if description.contains("already registered") || description.contains("user already") {
             return .emailAlreadyRegistered
         }

@@ -34,6 +34,10 @@ enum AuthStrings {
     static let emailAlreadyRegistered = LocalizedStringKey("auth.error.email-already-registered")
     static let emailNotConfirmed = LocalizedStringKey("auth.error.email-not-confirmed")
     static let serviceUnavailable = LocalizedStringKey("auth.error.service-unavailable")
+    static let offline = LocalizedStringKey("auth.error.offline")
+    static let serverUnreachable = LocalizedStringKey("auth.error.server-unreachable")
+    static let emailRateLimited = LocalizedStringKey("auth.error.email-rate-limited")
+    static let emailNotAllowed = LocalizedStringKey("auth.error.email-not-allowed")
     static let unknown = LocalizedStringKey("auth.error.unknown")
 }
 
@@ -57,6 +61,14 @@ extension AuthUIError {
             AuthStrings.emailNotConfirmed
         case .serviceUnavailable:
             AuthStrings.serviceUnavailable
+        case .offline:
+            AuthStrings.offline
+        case .serverUnreachable:
+            AuthStrings.serverUnreachable
+        case .emailRateLimited:
+            AuthStrings.emailRateLimited
+        case .emailNotAllowed:
+            AuthStrings.emailNotAllowed
         case .unknown:
             AuthStrings.unknown
         }
