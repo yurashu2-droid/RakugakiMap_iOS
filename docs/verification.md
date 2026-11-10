@@ -323,3 +323,7 @@
   - 端末が圏外のときは「インターネットにつながっていません。」
   - 確認メールの回数上限と、送れない宛先も、それぞれの文言にした。
   - `AuthErrorMappingTests`で振り分けを確かめる。
+- CI結果（2026-11-11、commit 7e7e19a、[run 42847403526](https://github.com/yurashu2-droid/RakugakiMap_iOS/actions/runs/42847403526)）: Core、署名なしdevice build、unit/UI test、IPA生成がすべて成功。最初の画面の作り直し（a8b29b3）と、エラーの振り分けの修正を含む。
+  - [IPA artifact](https://github.com/yurashu2-droid/RakugakiMap_iOS/actions/runs/42847403526/artifacts/13777933514)をWindowsの`.build/ipa-download/7e7e19a/`へ取得。同梱SHA256と一致、`commit.txt`は7e7e19a。
+  - UIテストが残した画面写真（シミュレーター、昼の配色）で、最初の画面と新規登録の画面を目で見た。題名の二重は消え、ボタンの高さと形はそろい、文字の欠けや重なりはなかった。夜の配色、大きい文字、小さい画面は見ていない。
+  - iPhoneでの見た目と、サーバーを戻したあとの新規登録は未確認。
