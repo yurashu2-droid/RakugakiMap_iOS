@@ -58,12 +58,15 @@ struct NearbyARSensorCard: View {
         return strength >= 2 ? AppColors.fuji : AppColors.fujiTint
     }
 
-    /// 強さの4本。右へ行くほど背が高い
+    /// 強さの4本。右へ行くほど背が高い。
+    /// 4本ぜんぶが点くのは「見られる距離」に入ったときだけにして、ボタンが出ることと意味をそろえる。
+    /// 見られる距離はARごとに違う（解放半径）ので、近さの段階だけでは4本目を点けない。
     private var bars: some View {
-        HStack(alignment: .bottom, spacing: 4) {
+        let lit = canOpen ? 4 : min(strength, 3)
+        return HStack(alignment: .bottom, spacing: 4) {
             ForEach(1...4, id: \.self) { step in
                 RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    .fill(step <= strength ? AppColors.shu : AppColors.ink.opacity(0.12))
+                    .fill(step <= lit ? AppColors.shu : AppColors.ink.opacity(0.12))
                     .frame(width: 22, height: CGFloat(4 + step * 3))
             }
         }

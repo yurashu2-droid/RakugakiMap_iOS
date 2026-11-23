@@ -430,7 +430,7 @@
 - 利用者の指示: 探す体験の最初の一歩として、アプリの地図に近くのARの気配メーターを入れる（「入れ始めて」）。AR画面とARセッションは変えていない。サーバーとAPI契約も変えていない。
 - 追加・変更したもの:
   - `Features/Map/NearbyARSensorModel.swift`（新規）: 地図を開いている間、今ある`get_nearby_ar_traces`と端末の位置から、いちばん近い公開中のARへの近さを4段階で出す。段階はCoreの`TraceDistanceBand`（100m以上・50〜100m・15〜50m・15m未満）をそのまま使う。そのARの解放半径に入ったら「見られるAR」として出す。100mより近いときは、Coreの`TraceDirection`とコンパスで向きも出す。正確な距離と座標は出さない（設計書8章の「距離帯と方向だけを表示」）。
-  - `Features/Map/NearbyARSensorCard.swift`（新規）: 気配メーターの見た目（白い角丸の面、向きの丸、ひとこと、4本の強さ）。
+  - `Features/Map/NearbyARSensorCard.swift`（新規）: 気配メーターの見た目（白い角丸の面、向きの丸、ひとこと、4本の強さ）。4本ぜんぶが点くのは、見られる距離に入って「カメラでさがす」が出ているときだけ。それ以外は3本まで。
   - `Features/Map/MapScreen.swift`: 近くにARがあるときだけメーターを出す。見られる距離に入ると、下に「カメラでさがす」を出し、今ある`.arPhoto`の経路でそのARのAR画面を開く。強くなったときに軽く振動させる。
   - `App/RootTabs.swift`: 地図にARの読み出しとセッションを渡す。
   - `Infrastructure/Location/HeadingProvider.swift`: これまで未使用だった部品。AppleのCLHeading.trueHeadingの説明では、真北の向きは同じマネージャーで位置の更新も動いているときだけ有効になる。そのままでは値が出ないので、許可済みのときだけ粗い精度の位置更新も動かすようにした。差し替え用に`HeadingProviding`を足した。
