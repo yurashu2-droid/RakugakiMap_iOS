@@ -87,7 +87,9 @@ struct RootTabs: View {
                     assetLoader: assetLoader,
                     sessionContext: sessionContext,
                     existingPhotoRakugakiService: existingPhotoRakugakiService,
-                    photoService: photoService
+                    photoService: photoService,
+                    arRepository: arRepository,
+                    arSession: arSession
                 ) { route in
                     router.navigate(to: route)
                 }

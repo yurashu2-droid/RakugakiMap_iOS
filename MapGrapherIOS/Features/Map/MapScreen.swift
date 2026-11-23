@@ -13,6 +13,7 @@ struct MapScreen: View {
     private let existingPhotoRakugakiService: (any ExistingPhotoRakugakiServing)?
 
     @StateObject private var model: MapScreenModel
+    @StateObject private var sensor: NearbyARSensorModel
     @State private var sheetRoute: MapSheetRoute?
     @State private var selectedPhoto: Photo?
     @State private var pendingARPhotoID: UUID?
@@ -29,6 +30,8 @@ struct MapScreen: View {
         sessionContext: SessionContext? = nil,
         existingPhotoRakugakiService: (any ExistingPhotoRakugakiServing)? = nil,
         photoService: any PhotoDetailUIService = FakePhotoDetailUIService(),
+        arRepository: (any ARExperienceServing)? = nil,
+        arSession: (any SessionProviding)? = nil,
         onPresentRoute: @escaping (AppRoute) -> Void = { _ in }
     ) {
         self.isUITesting = isUITesting
@@ -43,6 +46,46 @@ struct MapScreen: View {
             wrappedValue: MapScreenModel(
                 photoReader: photoReader,
                 locationProvider: locationProvider
+            )
+        )
+        _sensor = StateObject(
+            wrappedValue: Self.makeSensor(
+                isUITesting: isUITesting,
+                repository: arRepository,
+                session: arSession,
+                context: sessionContext
+            )
+        )
+    }
+
+    /// 近くのARの気配メーター。ログイン済みでARの読み出しが使えるときだけ動かす。
+    private static func makeSensor(
+        isUITesting: Bool,
+        repository: (any ARExperienceServing)?,
+        session: (any SessionProviding)?,
+        context: SessionContext?
+    ) -> NearbyARSensorModel {
+        if isUITesting {
+            // UIテストでは位置もサーバーも使わない。見た目を確かめる引数があるときだけ、決まった表示を出す。
+            guard ProcessInfo.processInfo.arguments.contains("--ar-sensor-ui-testing"),
+                  let point = GeoPoint(latitude: 35.6595, longitude: 139.7005),
+                  let trace = ARTrace(id: UUID(), photoID: UUID(), location: point,
+                                      unlockRadiusM: 50, discoveryRadiusM: 150, distanceM: 30,
+                                      createdAt: Date(), anchorType: .localPlane) else {
+                return NearbyARSensorModel(services: nil)
+            }
+            return .fixed(strength: 3, arrowDegrees: 40, openableTrace: trace)
+        }
+        guard let repository, let session, let context else {
+            return NearbyARSensorModel(services: nil)
+        }
+        return NearbyARSensorModel(
+            services: NearbyARSensorModel.Services(
+                context: context,
+                repository: repository,
+                location: ForegroundLocationProvider(),
+                heading: HeadingProvider(),
+                session: session
             )
         )
     }
@@ -67,13 +110,39 @@ struct MapScreen: View {
                 VStack(spacing: AppSpacing.medium) {
                     filterBar
                     stateOverlay
+                    // 近くに公開中のARがあるときだけ、気配メーターを出す
+                    if sensor.strength > 0 {
+                        HStack {
+                            NearbyARSensorCard(
+                                strength: sensor.strength,
+                                arrowDegrees: sensor.arrowDegrees,
+                                canOpen: sensor.openableTrace != nil
+                            )
+                            Spacer(minLength: 0)
+                        }
+                        .transition(.scale(scale: 0.9, anchor: .topLeading).combined(with: .opacity))
+                    }
                 }
                 .padding(.horizontal, AppSpacing.medium)
                 .padding(.top, AppSpacing.small)
+                .animation(.spring(response: 0.35, dampingFraction: 0.7), value: sensor.strength)
+                // 近づいて強くなったときだけ、軽く振動で知らせる
+                .sensoryFeedback(.increase, trigger: sensor.strength) { old, new in new > old }
 
                 VStack {
                     Spacer()
                     HStack {
+                        // 見られる距離に入ったARがあるときだけ出す。今あるAR画面をそのARで開く
+                        if let trace = sensor.openableTrace {
+                            Button {
+                                onPresentRoute(.arPhoto(trace.photoID))
+                            } label: {
+                                Label("カメラでさがす", systemImage: "camera.viewfinder")
+                            }
+                            .buttonStyle(RakugakiPrimaryButtonStyle())
+                            .accessibilityIdentifier("map.ar-sensor.open")
+                            .transition(.scale(scale: 0.9, anchor: .bottomLeading).combined(with: .opacity))
+                        }
                         Spacer()
                         Button {
                             usesAerialImagery.toggle()
@@ -111,6 +180,7 @@ struct MapScreen: View {
                 }
                 .padding(.horizontal, AppSpacing.medium)
                 .padding(.bottom, AppSpacing.medium)
+                .animation(.spring(response: 0.35, dampingFraction: 0.7), value: sensor.openableTrace != nil)
             }
             .background(AppColors.paper)
             .navigationTitle(AppStrings.map)
@@ -159,8 +229,15 @@ struct MapScreen: View {
             .task {
                 await model.start()
             }
+            .onAppear {
+                startSensorIfReady()
+            }
+            .onChange(of: model.currentLocation != nil) {
+                startSensorIfReady()
+            }
             .onDisappear {
                 model.cancelPendingSearch()
+                sensor.stop()
             }
             .sheet(item: $sheetRoute, onDismiss: {
                 if let photoID = pendingARPhotoID {
@@ -302,6 +379,12 @@ struct MapScreen: View {
         Task { @MainActor in
             await model.refresh()
         }
+    }
+
+    /// 気配メーターは、地図が現在地を取れたあとにだけ動かす（位置の許可を求める画面を、ここからは出さない）。
+    private func startSensorIfReady() {
+        guard model.currentLocation != nil else { return }
+        sensor.start()
     }
 }
 

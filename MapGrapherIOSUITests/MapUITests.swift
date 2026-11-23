@@ -48,10 +48,39 @@ final class MapUITests: XCTestCase {
         XCTAssertTrue(app.buttons[UI.arButton].waitForExistence(timeout: 5))
     }
 
-    private func launchApp() -> XCUIApplication {
+    /// 近くにARがあるときの地図。位置もサーバーも使わず、決まった表示（強さ3・右向きの矢印・見られる距離）を出して見た目を確かめる
+    func testNearbyARSensorShowsMeterAndCameraButton() throws {
+        let app = launchApp(extraArguments: ["--ar-sensor-ui-testing"])
+
+        XCTAssertTrue(screen(UI.mapScreen, in: app).waitForExistence(timeout: 5))
+        let sensor = screen("map.ar-sensor", in: app)
+        XCTAssertTrue(sensor.waitForExistence(timeout: 5))
+        XCTAssertEqual(sensor.label, "ARの気配")
+        let open = app.buttons["map.ar-sensor.open"]
+        XCTAssertTrue(open.waitForExistence(timeout: 5))
+        XCTAssertEqual(open.label, "カメラでさがす")
+
+        // 見た目を後から目で確かめられるよう、画面写真をテスト結果に残す
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "地図の気配メーター"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
+
+    /// ふだんの地図には、気配メーターも「カメラでさがす」も出ない
+    func testMapHidesARSensorWhenNothingIsNearby() throws {
+        let app = launchApp()
+
+        XCTAssertTrue(screen(UI.mapScreen, in: app).waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["map.filter.all"].waitForExistence(timeout: 5))
+        XCTAssertFalse(screen("map.ar-sensor", in: app).exists)
+        XCTAssertFalse(app.buttons["map.ar-sensor.open"].exists)
+    }
+
+    private func launchApp(extraArguments: [String] = []) -> XCUIApplication {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = [UI.launchArgument]
+        app.launchArguments = [UI.launchArgument] + extraArguments
         app.launch()
         // 起動直後は「今日」。地図のタブへ移ってから確かめる
         let mapTab = app.buttons["tab.map"]
