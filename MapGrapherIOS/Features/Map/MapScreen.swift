@@ -129,20 +129,21 @@ struct MapScreen: View {
                 // 近づいて強くなったときだけ、軽く振動で知らせる
                 .sensoryFeedback(.increase, trigger: sensor.strength) { old, new in new > old }
 
-                VStack {
+                VStack(alignment: .leading, spacing: AppSpacing.small) {
                     Spacer()
-                    HStack {
-                        // 見られる距離に入ったARがあるときだけ出す。今あるAR画面をそのARで開く
-                        if let trace = sensor.openableTrace {
-                            Button {
-                                onPresentRoute(.arPhoto(trace.photoID))
-                            } label: {
-                                Label("カメラでさがす", systemImage: "camera.viewfinder")
-                            }
-                            .buttonStyle(RakugakiPrimaryButtonStyle())
-                            .accessibilityIdentifier("map.ar-sensor.open")
-                            .transition(.scale(scale: 0.9, anchor: .bottomLeading).combined(with: .opacity))
+                    // 見られる距離に入ったARがあるときだけ出す。今あるAR画面をそのARで開く。
+                    // 地図の左下にあるAppleのロゴと規約のリンクを隠さないよう、丸ボタンの列より一段上に置く
+                    if let trace = sensor.openableTrace {
+                        Button {
+                            onPresentRoute(.arPhoto(trace.photoID))
+                        } label: {
+                            Label("カメラでさがす", systemImage: "camera.viewfinder")
                         }
+                        .buttonStyle(RakugakiPrimaryButtonStyle())
+                        .accessibilityIdentifier("map.ar-sensor.open")
+                        .transition(.scale(scale: 0.9, anchor: .bottomLeading).combined(with: .opacity))
+                    }
+                    HStack {
                         Spacer()
                         Button {
                             usesAerialImagery.toggle()
